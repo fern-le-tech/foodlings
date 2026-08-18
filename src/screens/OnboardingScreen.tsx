@@ -1,0 +1,290 @@
+import { useState } from "react";
+import { View, Text, TextInput, Pressable, StyleSheet, Alert } from "react-native";
+import { supabase } from "@/lib/supabase";
+import { colors, spacing, radii } from "@/theme/colors";
+
+interface Props {
+  // Fired right after a brand-new account is created (not on sign-in), so
+  // RootNavigator can route to the one-time avatar-choice screen instead of
+  // straight into the app.
+  onSignUpSuccess?: () => void;
+}
+
+type Mode = "signIn" | "signUp" | "resetRequest" | "resetConfirm";
+
+/**
+ * Minimal email + password sign-up/sign-in, plus a mobile-friendly password
+ * reset flow. Password reset uses an emailed 6-digit CODE rather than a
+ * link — a link would need a hosted web page to land on to collect the new
+ * password, which this project doesn't have. The code is typed back into
+ * the app instead, so the whole flow stays in-app with no deep linking.
+ *
+ * IMPORTANT ONE-TIME SETUP: Supabase's default "Reset Password" email
+ * template contains a link, not a plain code. To make this flow work,
+ * edit that template in Supabase → Authentication → Emails → Reset
+ * Password, and make sure the body includes {{ .Token }} somewhere
+ * (e.g. "Your FoodieMon reset code is {{ .Token }}") so the code actually
+ * gets sent.
+ */
+export function OnboardingScreen({ onSignUpSuccess }: Props) {
+  const [mode, setMode] = useState<Mode>("signUp");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newPasswordVisible, setNewPasswordVisible] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    setBusy(true);
+    try {
+      if (mode === "signUp") {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { display_name: displayName || "New Trainer" } },
+        });
+        if (error) throw error;
+        if (!data.session) {
+          Alert.alert(
+            "Check your email",
+            "Your account was created, but you need to confirm your email before logging in. " +
+              "(If you're testing and don't want this step, turn off \"Confirm email\" in Supabase → Authentication → Providers.)"
+          );
+        } else {
+          onSignUpSuccess?.();
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
+    } catch (err: any) {
+      Alert.alert("Something went wrong", err.message ?? String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const sendResetCode = async () => {
+    if (!email) {
+      Alert.alert("Enter your email first", "We need your email to send a reset code.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+      Alert.alert("Code sent", "Check your email for a 6-digit reset code.");
+      setMode("resetConfirm");
+    } catch (err: any) {
+      Alert.alert("Something went wrong", err.message ?? String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmReset = async () => {
+    if (!resetCode || !newPassword) {
+      Alert.alert("Missing info", "Enter both the code from your email and a new password.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token: resetCode,
+        type: "recovery",
+      });
+      if (verifyError) throw verifyError;
+
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      if (updateError) throw updateError;
+
+      Alert.alert("Password updated", "You're all set — you're now logged in.");
+      // A successful verifyOtp + updateUser already establishes a session,
+      // so RootNavigator's auth listener will pick it up and route into
+      // the app automatically — no manual navigation needed here.
+    } catch (err: any) {
+      Alert.alert("Something went wrong", err.message ?? String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (mode === "resetRequest") {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Reset password</Text>
+        <Text style={styles.subtitle}>We'll email you a 6-digit code.</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor={colors.textDisabled}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+        />
+
+        <Pressable style={styles.button} onPress={sendResetCode} disabled={busy}>
+          <Text style={styles.buttonLabel}>{busy ? "Sending…" : "Send reset code"}</Text>
+        </Pressable>
+
+        <Pressable onPress={() => setMode("signIn")}>
+          <Text style={styles.switchLabel}>Back to log in</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (mode === "resetConfirm") {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Enter your code</Text>
+        <Text style={styles.subtitle}>Sent to {email}</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="6-digit code"
+          placeholderTextColor={colors.textDisabled}
+          keyboardType="number-pad"
+          value={resetCode}
+          onChangeText={setResetCode}
+        />
+
+        <View style={styles.passwordRow}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="New password"
+            placeholderTextColor={colors.textDisabled}
+            secureTextEntry={!newPasswordVisible}
+            value={newPassword}
+            onChangeText={setNewPassword}
+          />
+          <Pressable onPress={() => setNewPasswordVisible(!newPasswordVisible)}>
+            <Text style={styles.showHideLabel}>{newPasswordVisible ? "Hide" : "Show"}</Text>
+          </Pressable>
+        </View>
+
+        <Pressable style={styles.button} onPress={confirmReset} disabled={busy}>
+          <Text style={styles.buttonLabel}>{busy ? "Updating…" : "Set new password"}</Text>
+        </Pressable>
+
+        <Pressable onPress={() => setMode("resetRequest")}>
+          <Text style={styles.switchLabel}>Didn't get a code? Send again</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>FoodieMon</Text>
+      <Text style={styles.subtitle}>Collect Denver, one meal at a time.</Text>
+
+      {mode === "signUp" && (
+        <TextInput
+          style={styles.input}
+          placeholder="Display name"
+          placeholderTextColor={colors.textDisabled}
+          value={displayName}
+          onChangeText={setDisplayName}
+        />
+      )}
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        placeholderTextColor={colors.textDisabled}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
+      />
+
+      <View style={styles.passwordRow}>
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="Password"
+          placeholderTextColor={colors.textDisabled}
+          secureTextEntry={!passwordVisible}
+          value={password}
+          onChangeText={setPassword}
+        />
+        <Pressable onPress={() => setPasswordVisible(!passwordVisible)}>
+          <Text style={styles.showHideLabel}>{passwordVisible ? "Hide" : "Show"}</Text>
+        </Pressable>
+      </View>
+
+      {mode === "signIn" && (
+        <Pressable onPress={() => setMode("resetRequest")} style={styles.forgotWrap}>
+          <Text style={styles.forgotLabel}>Forgot password?</Text>
+        </Pressable>
+      )}
+
+      <Pressable style={styles.button} onPress={submit} disabled={busy}>
+        <Text style={styles.buttonLabel}>{mode === "signUp" ? "Create account" : "Log in"}</Text>
+      </Pressable>
+
+      <Pressable onPress={() => setMode(mode === "signUp" ? "signIn" : "signUp")}>
+        <Text style={styles.switchLabel}>
+          {mode === "signUp" ? "Already have an account? Log in" : "New here? Create an account"}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background, justifyContent: "center", padding: spacing.lg },
+  title: { fontSize: 32, fontWeight: "800", color: colors.textPrimary, textAlign: "center" },
+  subtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginTop: spacing.xs,
+    marginBottom: spacing.xl,
+  },
+  input: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.card,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    color: colors.textPrimary,
+  },
+  passwordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.card,
+    marginBottom: spacing.sm,
+    paddingRight: spacing.md,
+  },
+  passwordInput: {
+    flex: 1,
+    padding: spacing.md,
+    color: colors.textPrimary,
+  },
+  showHideLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.accentEvolution,
+  },
+  forgotWrap: { alignSelf: "flex-end", marginBottom: spacing.sm },
+  forgotLabel: { fontSize: 13, color: colors.textSecondary },
+  button: {
+    backgroundColor: colors.textPrimary,
+    borderRadius: radii.pill,
+    paddingVertical: spacing.md,
+    alignItems: "center",
+    marginTop: spacing.sm,
+  },
+  buttonLabel: { color: colors.surface, fontWeight: "700" },
+  switchLabel: { color: colors.textSecondary, textAlign: "center", marginTop: spacing.md, fontSize: 13 },
+});

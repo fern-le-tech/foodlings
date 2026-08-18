@@ -1,0 +1,108 @@
+import { useEffect, useState } from "react";
+import { supabase } from "./supabase.js";
+import { StaffLogin } from "./StaffLogin.jsx";
+import { CheckInConfirm } from "./CheckInConfirm.jsx";
+import { AdminDashboard } from "./AdminDashboard.jsx";
+import { StaffRewardsManager } from "./StaffRewardsManager.jsx";
+import { StaffDailyDealsManager } from "./StaffDailyDealsManager.jsx";
+import { StaffEvolutionSettings } from "./StaffEvolutionSettings.jsx";
+
+const ADMIN_EMAILS = ["fernando.lambar@gmail.com"];
+const THEME_STORAGE_KEY = "foodiemon-staff-theme";
+
+function getInitialTheme() {
+  const stored = localStorage.getItem(THEME_STORAGE_KEY);
+  if (stored === "light" || stored === "dark") return stored;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+export function App() {
+  const [session, setSession] = useState(null);
+  const [ready, setReady] = useState(false);
+  const [staffTab, setStaffTab] = useState("checkin"); // "checkin" | "rewards" | "deals" | "evolution"
+  const [theme, setTheme] = useState(getInitialTheme);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setReady(true);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
+
+  if (!ready) return null;
+
+  const isAdmin = session && ADMIN_EMAILS.includes(session.user.email);
+  const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
+
+  return (
+    <div className="app-shell">
+      <header className="app-header">
+        <h1>FoodieMon — {isAdmin ? "Admin" : "Staff"}</h1>
+        <div className="theme-toggle">
+          <span className="theme-toggle-label">{theme === "dark" ? "Night" : "Day"}</span>
+          <button
+            type="button"
+            className="theme-toggle-switch"
+            onClick={toggleTheme}
+            aria-label="Toggle day/night mode"
+          />
+          {session && (
+            <button className="link-button" onClick={() => supabase.auth.signOut()}>
+              Log out
+            </button>
+          )}
+        </div>
+      </header>
+      {!session ? (
+        <StaffLogin />
+      ) : isAdmin ? (
+        <AdminDashboard />
+      ) : (
+        <>
+          <div className="tab-row">
+            <button
+              className={staffTab === "checkin" ? "tab-button tab-active" : "tab-button"}
+              onClick={() => setStaffTab("checkin")}
+            >
+              Check In
+            </button>
+            <button
+              className={staffTab === "rewards" ? "tab-button tab-active" : "tab-button"}
+              onClick={() => setStaffTab("rewards")}
+            >
+              Rewards
+            </button>
+            <button
+              className={staffTab === "deals" ? "tab-button tab-active" : "tab-button"}
+              onClick={() => setStaffTab("deals")}
+            >
+              Daily Deals
+            </button>
+            <button
+              className={staffTab === "evolution" ? "tab-button tab-active" : "tab-button"}
+              onClick={() => setStaffTab("evolution")}
+            >
+              Evolution
+            </button>
+          </div>
+          {staffTab === "checkin" ? (
+            <CheckInConfirm session={session} />
+          ) : staffTab === "rewards" ? (
+            <StaffRewardsManager session={session} />
+          ) : staffTab === "deals" ? (
+            <StaffDailyDealsManager session={session} />
+          ) : (
+            <StaffEvolutionSettings session={session} />
+          )}
+        </>
+      )}
+    </div>
+  );
+}

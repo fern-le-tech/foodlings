@@ -1,0 +1,36 @@
+{
+  "expo": {"scheme": "foodiemon",
+    "name": "FoodieMon",
+    "slug": "foodiemon",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF8EF"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "android": {
+      "package": "com.foodiemon.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFF8EF"
+      },
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"]
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.foodiemon.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "FoodieMon uses the camera to scan check-in QR codes and let you snap photos of your food for reviews.",
+        "NSPhotoLibraryUsageDescription": "FoodieMon needs photo library access so you can attach a photo to your review."
+      }
+    },
+    "extra": {
+      "supabaseUrl": "https://svndowiisksyzorvqxjn.supabase.co",
+      "supabaseAnonKey": "sb_publishable_cuFx8QdBNoIKM_U7855gFQ_AmGW2Ed3"
+    }
+  }
+}
