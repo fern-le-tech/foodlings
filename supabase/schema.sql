@@ -1,5 +1,5 @@
 -- =========================================================
--- FoodieMon — Supabase schema
+-- Foodlings — Supabase schema
 -- Run in the Supabase SQL editor, or via `supabase db push`
 -- with this file in supabase/migrations/
 -- =========================================================
@@ -72,9 +72,9 @@ alter table public.staff
   foreign key (restaurant_id) references public.restaurants (id) on delete cascade;
 
 -- =========================================================
--- 4. FOODIEMON CHARACTERS (one per restaurant, 3 evolution stages)
+-- 4. FOODLING CHARACTERS (one per restaurant, 3 evolution stages)
 -- =========================================================
-create table public.foodiemon_characters (
+create table public.foodling_characters (
   id uuid primary key default gen_random_uuid(),
   restaurant_id uuid not null unique references public.restaurants (id) on delete cascade,
   name_stage1 text not null,
@@ -208,12 +208,14 @@ begin
     raise exception 'staff member % is not authorized for restaurant %', p_staff_id, p_restaurant_id;
   end if;
 
-  -- 4-hour rate limit: check the most recent NON-rate-limited checkin
+  -- 4-hour rate limit: check the most recent NON-rate-limited checkin.
+  -- checkins.rate_limited is qualified below because RETURNS TABLE's own
+  -- "rate_limited" output column otherwise makes this ambiguous.
   select created_at into v_last_checkin
   from checkins
   where user_id = p_user_id
     and restaurant_id = p_restaurant_id
-    and rate_limited = false
+    and checkins.rate_limited = false
   order by created_at desc
   limit 1;
 
@@ -237,7 +239,7 @@ begin
   for update;
 
   select * into v_character
-  from foodiemon_characters
+  from foodling_characters
   where restaurant_id = p_restaurant_id;
 
   v_old_stage := v_progress.current_stage;
@@ -282,23 +284,23 @@ grant execute on function public.process_checkin(uuid, uuid, uuid, numeric) to a
 
 -- =========================================================
 -- 9b. EVOLUTION THRESHOLDS RPC — lets a restaurant's staff tune how
--- much XP customers need to evolve their Foodiemon at that restaurant.
+-- much XP customers need to evolve their Foodling at that restaurant.
 -- Restaurant is inferred from the caller's staff row (never passed in
 -- by the client), so a staff account can only ever edit its own
--- restaurant's character. thresholds_increase on foodiemon_characters
+-- restaurant's character. thresholds_increase on foodling_characters
 -- enforces stage3 > stage2 > 0.
 -- =========================================================
 create or replace function public.update_xp_thresholds(
   p_xp_threshold_stage2 int,
   p_xp_threshold_stage3 int
 )
-returns public.foodiemon_characters
+returns public.foodling_characters
 language plpgsql
 security definer set search_path = public
 as $$
 declare
   v_restaurant_id uuid;
-  v_character public.foodiemon_characters;
+  v_character public.foodling_characters;
 begin
   select restaurant_id into v_restaurant_id
   from staff
@@ -308,14 +310,14 @@ begin
     raise exception 'no active staff record found for the authenticated user';
   end if;
 
-  update foodiemon_characters
+  update foodling_characters
   set xp_threshold_stage2 = p_xp_threshold_stage2,
       xp_threshold_stage3 = p_xp_threshold_stage3
   where restaurant_id = v_restaurant_id
   returning * into v_character;
 
   if v_character is null then
-    raise exception 'no foodiemon character found for restaurant %', v_restaurant_id;
+    raise exception 'no foodling character found for restaurant %', v_restaurant_id;
   end if;
 
   return v_character;
@@ -367,7 +369,7 @@ group by u.id, u.display_name, u.avatar_url;
 alter table public.users enable row level security;
 alter table public.staff enable row level security;
 alter table public.restaurants enable row level security;
-alter table public.foodiemon_characters enable row level security;
+alter table public.foodling_characters enable row level security;
 alter table public.user_restaurant_progress enable row level security;
 alter table public.checkins enable row level security;
 alter table public.redeemable_rewards enable row level security;
@@ -385,7 +387,7 @@ create policy "users can update own profile" on public.users
 -- writes restricted to service role (admin dashboard uses service key).
 create policy "restaurants are publicly readable" on public.restaurants
   for select using (true);
-create policy "characters are publicly readable" on public.foodiemon_characters
+create policy "characters are publicly readable" on public.foodling_characters
   for select using (true);
 create policy "rewards are publicly readable" on public.redeemable_rewards
   for select using (true);

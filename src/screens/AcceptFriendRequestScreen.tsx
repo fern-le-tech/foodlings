@@ -78,7 +78,7 @@ export function AcceptFriendRequestScreen({ route, navigation }: Props) {
           a new one.
         </Text>
         <Pressable style={styles.doneButton} onPress={() => navigation.replace("Main")}>
-          <Text style={styles.doneButtonText}>Back to FoodieMon</Text>
+          <Text style={styles.doneButtonText}>Back to Foodlings</Text>
         </Pressable>
       </View>
     );
@@ -90,7 +90,7 @@ export function AcceptFriendRequestScreen({ route, navigation }: Props) {
         <MaterialCommunityIcons name="check-circle" size={56} color={colors.tabActive} />
         <Text style={styles.successTitle}>You're friends now!</Text>
         <Text style={styles.successSubtitle}>
-          You and {inviter.display_name ?? "your friend"} are now connected on FoodieMon.
+          You and {inviter.display_name ?? "your friend"} are now connected on Foodlings.
         </Text>
         <Pressable style={styles.doneButton} onPress={() => navigation.replace("Main")}>
           <Text style={styles.doneButtonText}>Done</Text>
@@ -113,7 +113,7 @@ export function AcceptFriendRequestScreen({ route, navigation }: Props) {
 
       <Text style={styles.inviteText}>
         <Text style={styles.inviteName}>{inviter.display_name ?? "Someone"}</Text> wants to be
-        your friend on FoodieMon
+        your friend on Foodlings
       </Text>
 
       <Pressable style={styles.acceptButton} onPress={handleAccept} disabled={responding}>

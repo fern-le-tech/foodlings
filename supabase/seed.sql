@@ -14,7 +14,7 @@ values (
   'Pork Green Chile Bowl'
 );
 
-insert into public.foodiemon_characters (
+insert into public.foodling_characters (
   restaurant_id, name_stage1, name_stage2, name_stage3,
   xp_threshold_stage2, xp_threshold_stage3
 )

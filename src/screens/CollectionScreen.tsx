@@ -5,15 +5,15 @@ import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "@/lib/supabase";
 import { colors, spacing } from "@/theme/colors";
 import { CharacterCard } from "@/components/CharacterCard";
-import type { FoodiemonCharacter, Restaurant, UserRestaurantProgress } from "@/types/database";
+import type { FoodlingCharacter, Restaurant, UserRestaurantProgress } from "@/types/database";
 
 type Row = {
-  character: FoodiemonCharacter;
+  character: FoodlingCharacter;
   restaurant: Pick<Restaurant, "id" | "name">;
   progress: UserRestaurantProgress | null;
 };
 
-// Local-only palette for the Foodidex "device" chrome — a retro red
+// Local-only palette for the Foodlingdex "device" chrome — a retro red
 // handheld-scanner look. Deliberately scoped to this screen rather than
 // added to the shared theme, since the rest of the app stays on the warm
 // cream design system.
@@ -31,7 +31,7 @@ const device = {
 };
 
 /**
- * "Foodidex" — grid of collected characters across partner restaurants.
+ * "Foodlingdex" — grid of collected characters across partner restaurants.
  * Only characters the person has actually checked in for (a
  * user_restaurant_progress row exists) are shown as cards; everything
  * else stays hidden rather than appearing as a locked "???" tile, so the
@@ -53,7 +53,7 @@ export function CollectionScreen() {
     setUserId(user?.id ?? null);
 
     const { data: characters } = await supabase
-      .from("foodiemon_characters")
+      .from("foodling_characters")
       .select("*, restaurants(id, name)");
 
     let progressByRestaurant = new Map<string, UserRestaurantProgress>();
@@ -141,7 +141,7 @@ export function CollectionScreen() {
         </View>
       </View>
 
-      <Text style={styles.title}>FOODIDEX</Text>
+      <Text style={styles.title}>FOODLINGDEX</Text>
 
       {/* Seam line simulating the case hinge before the screen begins */}
       <View style={styles.seam} />
@@ -152,7 +152,7 @@ export function CollectionScreen() {
           <View style={styles.emptyState}>
             <Text style={styles.emptyGlyph}>???</Text>
             <Text style={styles.emptyText}>
-              Explore Denver food spots to add Foodiemons to your Foodidex.
+              Explore Denver food spots to add Foodlings to your Foodlingdex.
             </Text>
           </View>
         ) : (

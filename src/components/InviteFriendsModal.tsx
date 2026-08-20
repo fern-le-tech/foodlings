@@ -16,7 +16,7 @@ export function InviteFriendsModal({ visible, onClose, userId, displayName }: Pr
 
   // Linking.createURL builds the right scheme automatically:
   // exp://<host>/--/invite/<id> in Expo Go during dev,
-  // foodiemon://invite/<id> in a standalone/dev-client build.
+  // foodlings://invite/<id> in a standalone/dev-client build.
   // Either way RootNavigator's linking config below knows how to route it.
   const inviteUrl = Linking.createURL(`invite/${userId}`);
 
@@ -24,7 +24,7 @@ export function InviteFriendsModal({ visible, onClose, userId, displayName }: Pr
     setSharing(true);
     try {
       await Share.share({
-        message: `${displayName ?? "Someone"} wants to be your friend on FoodieMon! Tap to accept: ${inviteUrl}`,
+        message: `${displayName ?? "Someone"} wants to be your friend on Foodlings! Tap to accept: ${inviteUrl}`,
         url: inviteUrl, // used on iOS
       });
     } catch {

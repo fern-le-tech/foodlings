@@ -1,4 +1,4 @@
-# FoodieMon — scaffold
+# Foodlings — scaffold
 
 Three pieces:
 
@@ -73,7 +73,7 @@ dashboard, or the admin dashboard once built) plus a matching row in
 ## What's actually built vs. stubbed
 
 **Fully wired (reads real data, calls real RPCs once Supabase is live):**
-- Collection (Foodidex) grid, Character detail (About/Rewards tabs),
+- Collection (Foodlingdex) grid, Character detail (About/Rewards tabs),
   Restaurant directory, Leaderboard, Onboarding sign-up/login
 - Staff portal: login, QR scan, check-in confirm, calls `process_checkin()`
 - `process_checkin()` — xp/points math, 4h rate limit, evolution detection,

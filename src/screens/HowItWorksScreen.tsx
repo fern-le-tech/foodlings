@@ -65,7 +65,7 @@ const SLIDES: Slide[] = [
     icon: "cards",
     title: "Collect all of Denver",
     body:
-      "Leave reviews, invite friends, and check in at new spots to grow your collection. Climb the leaderboard as you become a true FoodieMon trainer.",
+      "Leave reviews, invite friends, and check in at new spots to grow your collection. Climb the leaderboard as you become a true Foodlings trainer.",
   },
 ];
 

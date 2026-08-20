@@ -23,7 +23,7 @@ type Mode = "signIn" | "signUp" | "resetRequest" | "resetConfirm";
  * template contains a link, not a plain code. To make this flow work,
  * edit that template in Supabase → Authentication → Emails → Reset
  * Password, and make sure the body includes {{ .Token }} somewhere
- * (e.g. "Your FoodieMon reset code is {{ .Token }}") so the code actually
+ * (e.g. "Your Foodlings reset code is {{ .Token }}") so the code actually
  * gets sent.
  */
 export function OnboardingScreen({ onSignUpSuccess }: Props) {
@@ -182,7 +182,7 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>FoodieMon</Text>
+      <Text style={styles.title}>Foodlings</Text>
       <Text style={styles.subtitle}>Collect Denver, one meal at a time.</Text>
 
       {mode === "signUp" && (

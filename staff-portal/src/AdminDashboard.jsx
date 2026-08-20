@@ -83,7 +83,7 @@ function NewPartnerPanel({ onCreated }) {
       return;
     }
 
-    const { error: characterError } = await supabase.from("foodiemon_characters").insert({
+    const { error: characterError } = await supabase.from("foodling_characters").insert({
       restaurant_id: restaurant.id,
       name_stage1: form.name_stage1,
       art_url_stage1: form.art_url_stage1 || null,
@@ -207,7 +207,7 @@ function ManageExistingPanel() {
     setLoading(true);
     const [{ data: restaurants }, { data: characters }, { data: staffWithEmail }] = await Promise.all([
       supabase.from("restaurants").select("*").order("name"),
-      supabase.from("foodiemon_characters").select("*"),
+      supabase.from("foodling_characters").select("*"),
       supabase.rpc("admin_list_staff_with_email"),
     ]);
     const charByRestaurant = new Map((characters ?? []).map((c) => [c.restaurant_id, c]));
@@ -338,9 +338,9 @@ function PartnerEditForm({ restaurant, character, onSaved }) {
     };
 
     const { error: characterError } = character
-      ? await supabase.from("foodiemon_characters").update(characterPayload).eq("id", character.id)
+      ? await supabase.from("foodling_characters").update(characterPayload).eq("id", character.id)
       : await supabase
-          .from("foodiemon_characters")
+          .from("foodling_characters")
           .insert({ ...characterPayload, restaurant_id: restaurant.id });
 
     if (characterError) {

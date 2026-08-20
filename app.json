@@ -1,7 +1,7 @@
 {
-  "expo": {"scheme": "foodiemon",
-    "name": "FoodieMon",
-    "slug": "foodiemon",
+  "expo": {"scheme": "foodlings",
+    "name": "Foodlings",
+    "slug": "foodlings",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,7 +13,7 @@
     },
     "assetBundlePatterns": ["**/*"],
     "android": {
-      "package": "com.foodiemon.app",
+      "package": "com.foodlings.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFF8EF"
@@ -22,10 +22,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.foodiemon.app",
+      "bundleIdentifier": "com.foodlings.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "FoodieMon uses the camera to scan check-in QR codes and let you snap photos of your food for reviews.",
-        "NSPhotoLibraryUsageDescription": "FoodieMon needs photo library access so you can attach a photo to your review."
+        "NSCameraUsageDescription": "Foodlings uses the camera to scan check-in QR codes and let you snap photos of your food for reviews.",
+        "NSPhotoLibraryUsageDescription": "Foodlings needs photo library access so you can attach a photo to your review."
       }
     },
     "extra": {

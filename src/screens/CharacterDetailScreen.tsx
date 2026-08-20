@@ -23,7 +23,7 @@ import { colors, spacing, radii } from "@/theme/colors";
 import { EvolutionTimeline } from "@/components/EvolutionTimeline";
 import { XPBar } from "@/components/XPBar";
 import { StarRating } from "@/components/StarRating";
-import type { FoodiemonCharacter, Restaurant, RedeemableReward, UserRestaurantProgress } from "@/types/database";
+import type { FoodlingCharacter, Restaurant, RedeemableReward, UserRestaurantProgress } from "@/types/database";
 
 type Tab = "about" | "rewards" | "reviews";
 
@@ -76,7 +76,7 @@ export function CharacterDetailScreen() {
 
   const [tab, setTab] = useState<Tab>("about");
   const [loading, setLoading] = useState(true);
-  const [character, setCharacter] = useState<FoodiemonCharacter | null>(null);
+  const [character, setCharacter] = useState<FoodlingCharacter | null>(null);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [progress, setProgress] = useState<UserRestaurantProgress | null>(null);
   const [rewards, setRewards] = useState<RedeemableReward[]>([]);
@@ -209,7 +209,7 @@ export function CharacterDetailScreen() {
         setUserId(user?.id ?? null);
 
         const [{ data: characterData }, { data: restaurantData }] = await Promise.all([
-          supabase.from("foodiemon_characters").select("*").eq("restaurant_id", restaurantId).single(),
+          supabase.from("foodling_characters").select("*").eq("restaurant_id", restaurantId).single(),
           supabase.from("restaurants").select("*").eq("id", restaurantId).single(),
         ]);
 
@@ -528,7 +528,7 @@ export function CharacterDetailScreen() {
               </Text>
             )}
             {!isUnlocked && (
-              <Text style={styles.lockedHint}>Check in here to reveal this Foodiemon.</Text>
+              <Text style={styles.lockedHint}>Check in here to reveal this Foodling.</Text>
             )}
           </View>
 

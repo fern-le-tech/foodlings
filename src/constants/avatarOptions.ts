@@ -1,5 +1,5 @@
-// Foodiemon-themed avatar options — food icons, not characters, so the
-// choice doesn't spoil/duplicate any restaurant's actual Foodiemon.
+// Foodlings-themed avatar options — food icons, not characters, so the
+// choice doesn't spoil/duplicate any restaurant's actual Foodling.
 export const AVATAR_OPTIONS = [
   {
     id: "burger",

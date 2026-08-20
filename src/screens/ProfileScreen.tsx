@@ -42,7 +42,7 @@ interface FavoriteCharacter {
 }
 
 /**
- * Profile tab: avatar, lifetime stats, regions visited, favorite Foodiemon
+ * Profile tab: avatar, lifetime stats, regions visited, favorite Foodling
  * (auto-picked as highest-xp for now — no manual favoriting UI yet), and an
  * optional Instagram link the person can add themselves.
  */
@@ -83,7 +83,7 @@ export function ProfileScreen() {
     const [{ data: userRow }, { count: characterCount }, { data: progressRows }, { data: checkins }] =
       await Promise.all([
         supabase.from("users").select("*").eq("id", authUser.id).single(),
-        supabase.from("foodiemon_characters").select("*", { count: "exact", head: true }),
+        supabase.from("foodling_characters").select("*", { count: "exact", head: true }),
         supabase
           .from("user_restaurant_progress")
           .select("restaurant_id, current_xp, current_stage, restaurants(name, city)")
@@ -117,7 +117,7 @@ export function ProfileScreen() {
     // the empty state after the first check-in.
     if (topRow) {
       const { data: charRow } = await supabase
-        .from("foodiemon_characters")
+        .from("foodling_characters")
         .select(
           "name_stage1, name_stage2, name_stage3, art_url_stage1, art_url_stage2, art_url_stage3, xp_threshold_stage2, xp_threshold_stage3"
         )
@@ -263,13 +263,13 @@ export function ProfileScreen() {
       />
 
       <View style={styles.statsGrid}>
-        <StatCard label="Foodiemons collected" value={`${collectedCount} / ${totalCharacters}`} />
+        <StatCard label="Foodlings collected" value={`${collectedCount} / ${totalCharacters}`} />
         <StatCard label="Regions visited" value={String(regionCount)} />
         <StatCard label="Total XP (all-time)" value={totalXp.toLocaleString()} />
         <StatCard label="Reward points (all-time)" value={totalPoints.toLocaleString()} />
       </View>
 
-      <Text style={styles.sectionLabel}>Favorite Foodiemon</Text>
+      <Text style={styles.sectionLabel}>Favorite Foodling</Text>
       {favorite && favoriteChar ? (
         <View style={styles.favoriteCard}>
           <View style={styles.favoriteTopRow}>
@@ -296,7 +296,7 @@ export function ProfileScreen() {
           )}
         </View>
       ) : (
-        <Text style={styles.emptyText}>Check in somewhere to get your first Foodiemon.</Text>
+        <Text style={styles.emptyText}>Check in somewhere to get your first Foodling.</Text>
       )}
 
       <Text style={styles.sectionLabel}>Instagram</Text>

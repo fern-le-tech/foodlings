@@ -8,7 +8,7 @@ import { StaffDailyDealsManager } from "./StaffDailyDealsManager.jsx";
 import { StaffEvolutionSettings } from "./StaffEvolutionSettings.jsx";
 
 const ADMIN_EMAILS = ["fernando.lambar@gmail.com"];
-const THEME_STORAGE_KEY = "foodiemon-staff-theme";
+const THEME_STORAGE_KEY = "foodlings-staff-theme";
 
 function getInitialTheme() {
   const stored = localStorage.getItem(THEME_STORAGE_KEY);
@@ -44,7 +44,7 @@ export function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <h1>FoodieMon — {isAdmin ? "Admin" : "Staff"}</h1>
+        <h1>Foodlings — {isAdmin ? "Admin" : "Staff"}</h1>
         <div className="theme-toggle">
           <span className="theme-toggle-label">{theme === "dark" ? "Night" : "Day"}</span>
           <button

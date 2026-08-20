@@ -157,7 +157,7 @@ export function StaffDailyDealsManager({ session }) {
     <div className="card">
       <h2>{staffRow.restaurants?.name} — Daily Deals</h2>
       <p className="hint-text">
-        Post a deal and it shows up instantly on the Home tab of the FoodieMon app for every customer.
+        Post a deal and it shows up instantly on the Home tab of the Foodlings app for every customer.
       </p>
 
       <form onSubmit={handleSubmit} className="admin-form">

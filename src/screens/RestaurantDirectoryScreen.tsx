@@ -44,7 +44,7 @@ export function RestaurantDirectoryScreen() {
     const [{ data: restaurantData }, { data: characterData }, progressResult] = await Promise.all([
       supabase.from("restaurants").select("*").eq("partner_status", "active").order("name"),
       supabase
-        .from("foodiemon_characters")
+        .from("foodling_characters")
         .select(
           "restaurant_id, name_stage1, name_stage2, name_stage3, art_url_stage1, art_url_stage2, art_url_stage3"
         ),

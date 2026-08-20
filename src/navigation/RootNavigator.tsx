@@ -104,10 +104,10 @@ function MainTabs() {
 }
 
 // Deep link routing: exp://.../--/invite/<id> in Expo Go during dev,
-// foodiemon://invite/<id> in a standalone/dev-client build. Either form
+// foodlings://invite/<id> in a standalone/dev-client build. Either form
 // maps to the same "AcceptFriendRequest" screen with inviterId as a param.
 const linking = {
-  prefixes: [Linking.createURL("/"), "foodiemon://"],
+  prefixes: [Linking.createURL("/"), "foodlings://"],
   config: {
     screens: {
       AcceptFriendRequest: "invite/:inviterId",
@@ -170,7 +170,7 @@ export function RootNavigator() {
               name="Main"
               options={{
                 headerShown: true,
-                title: "FoodieMon",
+                title: "Foodlings",
                 headerRight: () => <InviteHeaderButton userId={session.user.id} />,
               }}
             >

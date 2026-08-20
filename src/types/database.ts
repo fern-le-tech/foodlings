@@ -28,7 +28,7 @@ export interface Restaurant {
   created_at: string;
 }
 
-export interface FoodiemonCharacter {
+export interface FoodlingCharacter {
   id: string;
   restaurant_id: string;
   name_stage1: string;
@@ -114,10 +114,10 @@ export interface Database {
     Tables: {
       users: { Row: User; Insert: Partial<User>; Update: Partial<User> };
       restaurants: { Row: Restaurant; Insert: Partial<Restaurant>; Update: Partial<Restaurant> };
-      foodiemon_characters: {
-        Row: FoodiemonCharacter;
-        Insert: Partial<FoodiemonCharacter>;
-        Update: Partial<FoodiemonCharacter>;
+      foodling_characters: {
+        Row: FoodlingCharacter;
+        Insert: Partial<FoodlingCharacter>;
+        Update: Partial<FoodlingCharacter>;
       };
       user_restaurant_progress: {
         Row: UserRestaurantProgress;

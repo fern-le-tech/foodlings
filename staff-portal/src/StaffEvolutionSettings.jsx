@@ -14,7 +14,7 @@ export function StaffEvolutionSettings({ session }) {
 
   const loadCharacter = async (restaurantId) => {
     const { data } = await supabase
-      .from("foodiemon_characters")
+      .from("foodling_characters")
       .select("*")
       .eq("restaurant_id", restaurantId)
       .single();
@@ -78,7 +78,7 @@ export function StaffEvolutionSettings({ session }) {
     <div className="card">
       <h2>{staffRow.restaurants?.name} — Evolution Settings</h2>
       <p className="hint-text">
-        Set how much XP a customer needs at your restaurant to evolve their Foodiemon. Stage 1 always starts at 0
+        Set how much XP a customer needs at your restaurant to evolve their Foodling. Stage 1 always starts at 0
         XP; you control the thresholds for stages 2 and 3.
       </p>
 

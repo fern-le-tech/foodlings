@@ -31,7 +31,7 @@ async function migrateOne(characterId: string, stageColumn: string, sourceUrl: s
 
 Deno.serve(async () => {
   const { data: characters, error } = await supabase
-    .from("foodiemon_characters")
+    .from("foodling_characters")
     .select("id, art_url_stage1, art_url_stage2, art_url_stage3");
 
   if (error) {
@@ -58,7 +58,7 @@ Deno.serve(async () => {
 
     if (Object.keys(updates).length > 0) {
       const { error: updateError } = await supabase
-        .from("foodiemon_characters")
+        .from("foodling_characters")
         .update(updates)
         .eq("id", character.id);
 

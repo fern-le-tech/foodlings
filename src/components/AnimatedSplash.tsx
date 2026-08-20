@@ -52,7 +52,7 @@ export default function AnimatedSplash({ onFinish }: Props) {
           },
         ]}
       >
-        FoodieMon
+        Foodlings
       </Animated.Text>
     </Animated.View>
   );
