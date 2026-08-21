@@ -22,6 +22,12 @@ interface ProgressRow {
   current_stage: 1 | 2 | 3;
 }
 
+// Directory-only accent — deliberately red rather than the shared
+// accentEvolution orange, which stays reserved for evolution/XP progress
+// elsewhere in the app (see the semantic-color note in theme/colors.ts).
+const DIRECTORY_RED = "#D8342B";
+const DIRECTORY_RED_LIGHT = "#E8776D";
+
 export function RestaurantDirectoryScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -103,7 +109,7 @@ export function RestaurantDirectoryScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={colors.accentEvolution} />
+        <ActivityIndicator color={DIRECTORY_RED} />
       </View>
     );
   }
@@ -113,7 +119,7 @@ export function RestaurantDirectoryScreen() {
   return (
     <View style={styles.screen}>
       <LinearGradient
-        colors={[colors.accentEvolution, "#F0A57A"]}
+        colors={[DIRECTORY_RED, DIRECTORY_RED_LIGHT]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.headerPanel, { paddingTop: insets.top + spacing.sm }]}
@@ -302,7 +308,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: colors.accentEvolution,
+    backgroundColor: DIRECTORY_RED,
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,
@@ -361,7 +367,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: colors.accentEvolution,
+    backgroundColor: DIRECTORY_RED,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: spacing.sm,
