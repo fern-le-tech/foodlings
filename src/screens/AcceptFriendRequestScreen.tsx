@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Image, Pressable, ActivityIndicator } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { supabase } from "@/lib/supabase";
 import { colors } from "@/theme/colors";
-
-type Props = {
-  route: { params: { inviterId: string } };
-  navigation: any;
-};
 
 type InviterInfo = {
   id: string;
@@ -15,8 +11,10 @@ type InviterInfo = {
   avatar_url: string | null;
 };
 
-export function AcceptFriendRequestScreen({ route, navigation }: Props) {
-  const { inviterId } = route.params;
+export function AcceptFriendRequestScreen() {
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const { inviterId } = route.params as { inviterId: string };
   const [inviter, setInviter] = useState<InviterInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [responding, setResponding] = useState(false);
@@ -72,7 +70,7 @@ export function AcceptFriendRequestScreen({ route, navigation }: Props) {
   if (result === "error" || !inviter) {
     return (
       <View style={styles.centered}>
-        <MaterialCommunityIcons name="alert-circle-outline" size={48} color={colors.textMuted ?? "#888"} />
+        <MaterialCommunityIcons name="alert-circle-outline" size={48} color={colors.textSecondary} />
         <Text style={styles.errorText}>
           This invite link isn't valid, or something went wrong. Try asking your friend to send
           a new one.
@@ -158,7 +156,7 @@ const styles = StyleSheet.create({
   inviteText: {
     fontSize: 18,
     textAlign: "center",
-    color: colors.text ?? "#1A1A1A",
+    color: colors.textPrimary,
     marginBottom: 28,
     lineHeight: 26,
   },
@@ -183,13 +181,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   declineButtonText: {
-    color: colors.textMuted ?? "#888888",
+    color: colors.textSecondary,
     fontSize: 15,
   },
   errorText: {
     fontSize: 15,
     textAlign: "center",
-    color: colors.textMuted ?? "#666666",
+    color: colors.textSecondary,
     marginTop: 16,
     marginBottom: 24,
     lineHeight: 22,
@@ -197,14 +195,14 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 22,
     fontWeight: "700",
-    color: colors.text ?? "#1A1A1A",
+    color: colors.textPrimary,
     marginTop: 16,
     marginBottom: 8,
   },
   successSubtitle: {
     fontSize: 15,
     textAlign: "center",
-    color: colors.textMuted ?? "#666666",
+    color: colors.textSecondary,
     marginBottom: 28,
   },
   doneButton: {

@@ -141,7 +141,7 @@ export function CollectionScreen() {
         </View>
       </View>
 
-      <Text style={styles.title}>FOODLINGDEX</Text>
+      <Text style={styles.title}>COLLECTION</Text>
 
       {/* Seam line simulating the case hinge before the screen begins */}
       <View style={styles.seam} />
@@ -152,7 +152,7 @@ export function CollectionScreen() {
           <View style={styles.emptyState}>
             <Text style={styles.emptyGlyph}>???</Text>
             <Text style={styles.emptyText}>
-              Explore Denver food spots to add Foodlings to your Foodlingdex.
+              Explore Denver food spots to add Foodlings to your collection.
             </Text>
           </View>
         ) : (

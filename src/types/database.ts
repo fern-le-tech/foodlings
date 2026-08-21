@@ -146,6 +146,14 @@ export interface Database {
         };
         Returns: ProcessCheckinResult[];
       };
+      accept_friend_invite: {
+        Args: { p_inviter_id: string };
+        Returns: void;
+      };
+      friends_leaderboard: {
+        Args: Record<PropertyKey, never>;
+        Returns: LeaderboardRow[];
+      };
     };
   };
 }

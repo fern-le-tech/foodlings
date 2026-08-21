@@ -118,7 +118,7 @@ export function RestaurantDirectoryScreen() {
         end={{ x: 1, y: 1 }}
         style={[styles.headerPanel, { paddingTop: insets.top + spacing.sm }]}
       >
-        <Text style={styles.eyebrow}>DENVER FOOD PASSPORT</Text>
+        <Text style={styles.eyebrow}>DIRECTORY</Text>
         <Text style={styles.title}>Partner restaurants</Text>
         <View style={styles.progressRow}>
           <View style={styles.progressTrack}>
@@ -130,7 +130,7 @@ export function RestaurantDirectoryScreen() {
             />
           </View>
           <Text style={styles.progressLabel}>
-            {unlockedCount} / {restaurants.length} stamped
+            {unlockedCount} / {restaurants.length} visited
           </Text>
         </View>
       </LinearGradient>

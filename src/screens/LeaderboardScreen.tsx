@@ -16,11 +16,8 @@ export function LeaderboardScreen() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      // TODO: scope this to the user's friends via the `friendships` table
-      // (status = 'accepted') instead of the global leaderboard view.
       const { data } = await supabase
-        .from("leaderboard")
-        .select("*")
+        .rpc("friends_leaderboard")
         .order(sortMode, { ascending: false })
         .limit(50);
       setRows(data ?? []);

@@ -96,16 +96,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "700",
-    color: colors.text ?? "#1A1A1A",
+    color: colors.textPrimary,
   },
   subtitle: {
     fontSize: 14,
-    color: colors.textMuted ?? "#666666",
+    color: colors.textSecondary,
     marginBottom: 16,
     lineHeight: 20,
   },
   linkBox: {
-    backgroundColor: colors.border ?? "#EEEEEE",
+    backgroundColor: colors.border,
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 14,
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 13,
-    color: colors.textMuted ?? "#444444",
+    color: colors.textSecondary,
   },
   shareButton: {
     flexDirection: "row",
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   closeButtonText: {
-    color: colors.textMuted ?? "#888888",
+    color: colors.textSecondary,
     fontSize: 15,
   },
 });
