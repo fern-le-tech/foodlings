@@ -20,6 +20,11 @@ export function App() {
   const [session, setSession] = useState(null);
   const [ready, setReady] = useState(false);
   const [staffTab, setStaffTab] = useState("checkin"); // "checkin" | "rewards" | "deals" | "evolution"
+  // Admin accounts default into the Admin dashboard, but an admin can also be
+  // linked as staff at their own restaurant (e.g. fernando.lambar@gmail.com
+  // at city o city) with no separate login for it — this lets them switch
+  // views without signing into a different account.
+  const [viewMode, setViewMode] = useState("admin"); // "admin" | "staff" — only meaningful when isAdmin
   const [theme, setTheme] = useState(getInitialTheme);
 
   useEffect(() => {
@@ -44,8 +49,17 @@ export function App() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <h1>Foodlings — {isAdmin ? "Admin" : "Staff"}</h1>
+        <h1>Foodlings — {isAdmin ? (viewMode === "admin" ? "Admin" : "Staff") : "Staff"}</h1>
         <div className="theme-toggle">
+          {isAdmin && (
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => setViewMode(viewMode === "admin" ? "staff" : "admin")}
+            >
+              {viewMode === "admin" ? "Switch to my staff view" : "Switch to Admin"}
+            </button>
+          )}
           <span className="theme-toggle-label">{theme === "dark" ? "Night" : "Day"}</span>
           <button
             type="button"
@@ -62,7 +76,7 @@ export function App() {
       </header>
       {!session ? (
         <StaffLogin />
-      ) : isAdmin ? (
+      ) : isAdmin && viewMode === "admin" ? (
         <AdminDashboard />
       ) : (
         <>
