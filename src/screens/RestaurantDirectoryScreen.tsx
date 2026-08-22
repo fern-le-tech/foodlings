@@ -131,7 +131,7 @@ export function RestaurantDirectoryScreen() {
             <View
               style={[
                 styles.progressFill,
-                { width: (restaurants.length ? (unlockedCount / restaurants.length) * 100 : 0) + "%" },
+                { width: `${restaurants.length ? (unlockedCount / restaurants.length) * 100 : 0}%` },
               ]}
             />
           </View>

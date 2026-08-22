@@ -7,25 +7,29 @@ interface Props {
   currentStage: 1 | 2 | 3;
   xpThresholdStage2: number;
   xpThresholdStage3: number;
-  size: number;
+  size?: number;
   strokeWidth?: number;
   children?: React.ReactNode;
 }
 
 const RING_RED = "#D8342B";
+const DEFAULT_SIZE = 64;
 
 /**
  * A full-circle XP progress ring that wraps directly around the hero
  * character image (children), rather than sitting as a separate widget
  * below it — the character sits centered inside the ring itself, matching
  * a "status ring around the avatar" pattern rather than a standalone gauge.
+ * `size` defaults to a compact footprint for standalone/no-children use
+ * (e.g. the favorite-Foodling card on Profile); pass an explicit size for
+ * the hero use on CharacterDetailScreen.
  */
 export function XPBar({
   currentXp,
   currentStage,
   xpThresholdStage2,
   xpThresholdStage3,
-  size,
+  size = DEFAULT_SIZE,
   strokeWidth = 14,
   children,
 }: Props) {

@@ -1,13 +1,14 @@
 import { View, Text, Image, StyleSheet } from "react-native";
 import { colors, spacing, radii } from "@/theme/colors";
-import type { FoodlingCharacter, UserRestaurantProgress } from "@/types/database";
+import type { FoodlingCharacter } from "@/types/database";
 
 interface Props {
   character: Pick<
     FoodlingCharacter,
     "name_stage1" | "name_stage2" | "name_stage3" | "art_url_stage1" | "art_url_stage2" | "art_url_stage3" | "xp_threshold_stage2" | "xp_threshold_stage3"
   >;
-  progress: Pick<UserRestaurantProgress, "current_stage" | "current_xp">;
+  // 0 = not yet checked in (locked/unrevealed), distinct from any real progress row
+  progress: { current_stage: 0 | 1 | 2 | 3; current_xp: number };
 }
 
 const STAGE_LABELS = ["name_stage1", "name_stage2", "name_stage3"] as const;
