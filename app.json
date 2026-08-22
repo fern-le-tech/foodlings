@@ -31,7 +31,7 @@
     "extra": {
       "supabaseUrl": "https://svndowiisksyzorvqxjn.supabase.co",
       "supabaseAnonKey": "sb_publishable_cuFx8QdBNoIKM_U7855gFQ_AmGW2Ed3",
-      "staffPortalUrl": "http://localhost:5173"
+      "staffPortalUrl": "http://10.0.0.18:5173"
     }
   }
 }
