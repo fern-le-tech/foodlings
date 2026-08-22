@@ -197,12 +197,6 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
       <Text style={styles.title}>Foodlings</Text>
       <Text style={styles.subtitle}>Collect Denver, one meal at a time.</Text>
 
-      {!!STAFF_PORTAL_URL && (mode === "signUp" || mode === "signIn") && (
-        <Pressable onPress={() => Linking.openURL(STAFF_PORTAL_URL)} style={styles.staffLinkWrap}>
-          <Text style={styles.staffLinkLabel}>Restaurant staff? Log in here</Text>
-        </Pressable>
-      )}
-
       {mode === "signUp" && (
         <TextInput
           style={styles.input}
@@ -251,6 +245,12 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
           {mode === "signUp" ? "Already have an account? Log in" : "New here? Create an account"}
         </Text>
       </Pressable>
+
+      {!!STAFF_PORTAL_URL && (
+        <Pressable onPress={() => Linking.openURL(STAFF_PORTAL_URL)} style={styles.staffLinkWrap}>
+          <Text style={styles.staffLinkLabel}>Restaurant staff? Log in here</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     marginBottom: spacing.xl,
   },
-  staffLinkWrap: { alignSelf: "center", marginTop: -spacing.md, marginBottom: spacing.lg },
+  staffLinkWrap: { alignSelf: "center", marginTop: spacing.md },
   staffLinkLabel: {
     fontSize: 13,
     color: colors.textSecondary,
