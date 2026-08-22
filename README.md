@@ -101,11 +101,16 @@ to `ADMIN_EMAILS` in `staff-portal/src/App.jsx`.
   `AcceptFriendRequestScreen`
 - **Profile** / **Public Profile** — lifetime stats, favorite Foodling,
   optional Instagram link
-- Check-in QR display, backed by the `mint-checkin-token` /
-  `resolve-checkin-token` edge functions — confirmed 2026-08-22 with a real
-  signed token through both deployed functions end-to-end (they're already
-  deployed on the live project with `CHECKIN_TOKEN_SECRET` set; the
-  "unverified" note that used to be here was stale)
+- Check-in QR display + success celebration, backed by the
+  `mint-checkin-token` / `resolve-checkin-token` edge functions — confirmed
+  2026-08-22 with a real signed token through both deployed functions
+  end-to-end (they're already deployed on the live project with
+  `CHECKIN_TOKEN_SECRET` set; the "unverified" note that used to be here was
+  stale). `CheckInQRScreen` listens for its own new `checkins` row
+  (realtime, same pattern as `RedeemQRScreen`) and navigates to
+  `CheckInSuccessScreen` the instant staff confirm — `checkins` needed
+  adding to the `supabase_realtime` publication first, done in
+  `20260822000000_enable_checkins_realtime.sql`.
 
 **Staff portal — fully wired:**
 - Login; check-in confirm scans the QR, resolves it via
@@ -121,15 +126,6 @@ to `ADMIN_EMAILS` in `staff-portal/src/App.jsx`.
 
 ## Stubbed / needs finishing
 
-- The customer never sees their own check-in confirmed: `CheckInSuccessScreen`
-  is registered in the navigator and fully built (xp/points/evolution
-  celebration), but nothing ever calls `navigation.navigate("CheckInSuccess",
-  ...)` — `process_checkin()` is only ever invoked from the staff portal, and
-  unlike the redemption flow there's no realtime subscription on the mobile
-  side to pick up the confirmation. Right now the customer's QR screen just
-  sits there with no feedback once staff scans it. Fixing this needs either
-  a realtime subscription on `checkins` (mirroring `RedeemQRScreen`'s
-  pattern) or some other signal back to the customer's device.
 - `rewrite-deal-ad` edge function is only the generated scaffold boilerplate
   (`"Hello from Functions!"`) — no real logic yet
 - Character art is still a pasted-in URL on the admin "Add New Partner" form
