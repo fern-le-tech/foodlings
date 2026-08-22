@@ -7,15 +7,20 @@
 -- through the Management API) using pg_get_functiondef/pg_get_viewdef/
 -- pg_policies/information_schema, not reconstructed from client code.
 --
--- ONE FIX APPLIED HERE, not yet applied live: apply_review_bonus()
--- on the live project still references `foodiemon_characters`, the
--- pre-rebrand table name that no longer exists (renamed to
--- `foodling_characters` by 20260819010000_rename_foodling_characters.sql).
--- That means every review insert currently fails live with
--- "relation foodiemon_characters does not exist" — the review flow is
--- broken in production right now. The version below uses the correct
--- table name; see the note above the function for how to apply the
--- same one-line fix to the live project.
+-- TWO FIXES BELOW, both since applied to the live project too (not just
+-- this migration):
+-- 1. apply_review_bonus() referenced `foodiemon_characters`, the
+--    pre-rebrand table name dropped by
+--    20260819010000_rename_foodling_characters.sql — every review insert
+--    was failing live with "relation foodiemon_characters does not exist".
+--    Fixed 2026-08-21.
+-- 2. fulfill_redemption() had no authorization check at all — any
+--    authenticated customer could call it directly with their own
+--    already-known redemption_id (returned to them by
+--    create_pending_redemption) and self-fulfill a reward without ever
+--    being scanned by staff. Fixed 2026-08-22 by adding the same
+--    auth.uid()-matches-p_staff_id + active-staff-membership check
+--    process_checkin already used.
 -- =========================================================
 
 -- ---------------------------------------------------------
@@ -273,6 +278,21 @@ declare
   v_title text;
   v_redeemed_at timestamptz;
 begin
+  -- staff must belong to the restaurant they're confirming a redemption for
+  -- (matches process_checkin's authorization pattern) — without this, any
+  -- authenticated customer could call this RPC directly with their own
+  -- already-known redemption_id and self-fulfill without ever being scanned.
+  if p_staff_id <> auth.uid() then
+    raise exception 'p_staff_id must match the authenticated caller';
+  end if;
+
+  if not exists (
+    select 1 from staff s
+    where s.id = p_staff_id and s.restaurant_id = p_restaurant_id and s.active
+  ) then
+    raise exception 'staff member % is not authorized for restaurant %', p_staff_id, p_restaurant_id;
+  end if;
+
   select status, reward_id, redeemed_at
   into v_status, v_reward_id, v_redeemed_at
   from redemptions
