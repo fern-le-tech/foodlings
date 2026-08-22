@@ -1,7 +1,19 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, Alert } from "react-native";
+import { View, Text, TextInput, Pressable, StyleSheet, Alert, Linking } from "react-native";
+import Constants from "expo-constants";
 import { supabase } from "@/lib/supabase";
 import { colors, spacing, radii } from "@/theme/colors";
+
+// This app and the staff portal (staff-portal/) are separate apps sharing
+// one Supabase project — the same login works on either, but each only
+// shows its own kind of dashboard, so someone with a staff account who
+// opens this app instead just lands in the regular customer experience
+// with no indication they're in the wrong place. Configure via app.json's
+// expo.extra.staffPortalUrl (or EXPO_PUBLIC_STAFF_PORTAL_URL) once the
+// staff portal has a real deployed URL — the link below hides itself if
+// neither is set.
+const STAFF_PORTAL_URL: string | undefined =
+  Constants.expoConfig?.extra?.staffPortalUrl ?? process.env.EXPO_PUBLIC_STAFF_PORTAL_URL;
 
 interface Props {
   // Fired right after a brand-new account is created (not on sign-in), so
@@ -185,6 +197,12 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
       <Text style={styles.title}>Foodlings</Text>
       <Text style={styles.subtitle}>Collect Denver, one meal at a time.</Text>
 
+      {!!STAFF_PORTAL_URL && (mode === "signUp" || mode === "signIn") && (
+        <Pressable onPress={() => Linking.openURL(STAFF_PORTAL_URL)} style={styles.staffLinkWrap}>
+          <Text style={styles.staffLinkLabel}>Restaurant staff? Log in here</Text>
+        </Pressable>
+      )}
+
       {mode === "signUp" && (
         <TextInput
           style={styles.input}
@@ -246,6 +264,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: spacing.xs,
     marginBottom: spacing.xl,
+  },
+  staffLinkWrap: { alignSelf: "center", marginTop: -spacing.md, marginBottom: spacing.lg },
+  staffLinkLabel: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    textDecorationLine: "underline",
   },
   input: {
     backgroundColor: colors.surface,
