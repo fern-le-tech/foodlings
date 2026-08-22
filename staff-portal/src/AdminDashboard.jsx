@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./supabase.js";
 
-const TABS = ["Add New Partner", "Manage Existing", "Staff"];
+const TABS = ["Overview", "Add New Partner", "Manage Existing", "Staff"];
 
 export function AdminDashboard() {
-  const [tab, setTab] = useState("Add New Partner");
+  const [tab, setTab] = useState("Overview");
 
   return (
     <div className="card">
@@ -19,9 +19,158 @@ export function AdminDashboard() {
           </button>
         ))}
       </div>
+      {tab === "Overview" && <OverviewPanel />}
       {tab === "Add New Partner" && <NewPartnerPanel onCreated={() => setTab("Manage Existing")} />}
       {tab === "Manage Existing" && <ManageExistingPanel />}
       {tab === "Staff" && <StaffPanel />}
+    </div>
+  );
+}
+
+/* ---------------- Overview (active restaurants, check-ins, revenue) ---------------- */
+
+function formatCurrency(n) {
+  return `$${Number(n).toFixed(2)}`;
+}
+
+function toISODate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function todayISO() {
+  return toISODate(new Date());
+}
+
+function daysAgoISO(days) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return toISODate(d);
+}
+
+function startOfMonthISO() {
+  const d = new Date();
+  return toISODate(new Date(d.getFullYear(), d.getMonth(), 1));
+}
+
+function OverviewPanel() {
+  const [startDate, setStartDate] = useState(todayISO());
+  const [endDate, setEndDate] = useState(todayISO());
+  const [activeCount, setActiveCount] = useState(0);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+
+    const [{ data: restaurants, error: restaurantsError }, { data: report, error: reportError }] =
+      await Promise.all([
+        supabase.from("restaurants").select("id, partner_status"),
+        supabase.rpc("admin_revenue_report", { p_start_date: startDate, p_end_date: endDate }),
+      ]);
+
+    if (restaurantsError || reportError) {
+      setError((restaurantsError ?? reportError).message);
+      setLoading(false);
+      return;
+    }
+
+    setActiveCount((restaurants ?? []).filter((r) => r.partner_status === "active").length);
+    // Highest earners first — the whole point of this view is spotting who's
+    // driving revenue, not alphabetical browsing (that's what Manage
+    // Existing is for).
+    setRows((report ?? []).slice().sort((a, b) => Number(b.revenue) - Number(a.revenue)));
+    setLoading(false);
+  };
+
+  // Only re-fetch when the date range actually changes via a preset or the
+  // Refresh button — not on every keystroke while typing a date manually.
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const applyPreset = (start, end) => {
+    setStartDate(start);
+    setEndDate(end);
+  };
+
+  const totalCheckins = rows.reduce((sum, r) => sum + Number(r.checkin_count), 0);
+  const totalRevenue = rows.reduce((sum, r) => sum + Number(r.revenue), 0);
+
+  return (
+    <div>
+      <h3>Date range</h3>
+      <div className="button-row preset-row">
+        <button type="button" className="link-button" onClick={() => applyPreset(todayISO(), todayISO())}>
+          Today
+        </button>
+        <button
+          type="button"
+          className="link-button"
+          onClick={() => applyPreset(daysAgoISO(6), todayISO())}
+        >
+          Last 7 days
+        </button>
+        <button
+          type="button"
+          className="link-button"
+          onClick={() => applyPreset(daysAgoISO(29), todayISO())}
+        >
+          Last 30 days
+        </button>
+        <button type="button" className="link-button" onClick={() => applyPreset(startOfMonthISO(), todayISO())}>
+          This month
+        </button>
+      </div>
+      <div className="date-range-row">
+        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+        <span className="hint-text">to</span>
+        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+        <button type="button" onClick={load} disabled={loading}>
+          {loading ? "Loading…" : "Refresh"}
+        </button>
+      </div>
+
+      {error && <p className="error-text">{error}</p>}
+
+      <div className="stat-grid">
+        <div className="stat-card">
+          <span className="stat-value">{activeCount}</span>
+          <span className="stat-label">Active restaurants</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-value">{totalCheckins}</span>
+          <span className="stat-label">Check-ins in range</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-value">{formatCurrency(totalRevenue)}</span>
+          <span className="stat-label">Total revenue in range</span>
+        </div>
+      </div>
+
+      <h3>By restaurant</h3>
+      {loading ? (
+        <p className="hint-text">Loading…</p>
+      ) : rows.length === 0 ? (
+        <p className="hint-text">No restaurants yet.</p>
+      ) : (
+        <ul className="admin-list">
+          {rows.map((r) => (
+            <li key={r.restaurant_id} className="admin-list-row">
+              <div>
+                <strong>{r.restaurant_name}</strong>
+                <div className="hint-text">
+                  {r.partner_status !== "active" ? `${r.partner_status} · ` : ""}
+                  {r.checkin_count} check-in{Number(r.checkin_count) === 1 ? "" : "s"}
+                </div>
+              </div>
+              <div className="revenue-row-value">{formatCurrency(r.revenue)}</div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
