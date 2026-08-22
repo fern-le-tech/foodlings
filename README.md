@@ -8,10 +8,13 @@ Three pieces:
 - **`supabase/`** — the Postgres schema, RLS policies, and edge functions
 
 This is well past scaffold stage — see "What's actually built" below. Nothing
-here has been `npm install`ed for you, and `supabase/schema.sql` +
-`supabase/migrations/` don't fully reproduce the live project (see the
-schema note in step 1) — but the app itself is real, working logic, not a
-placeholder.
+here has been `npm install`ed for you, but `supabase/schema.sql` +
+`supabase/migrations/` now fully reproduce the live project (verified
+2026-08-21 by querying the live schema directly — table DDL, RLS policies,
+triggers, and RPC bodies, not reconstructed from client code). That pass
+also caught `apply_review_bonus()` still referencing the pre-rebrand
+`foodiemon_characters` table name (silently breaking every review insert
+live) — fixed both in the migration and on the live project.
 
 ## 1. Set up Supabase
 
@@ -21,17 +24,7 @@ placeholder.
    `supabase db push` if you have the CLI). Optionally run
    `supabase/seed.sql` after for one example restaurant/character/rewards
    row.
-3. **Known gap:** the migrations bring in the `daily_deals`, `saved_deals`,
-   and `reviews` tables plus the `redemptions.status`/`fulfilled_at` columns,
-   but three RPCs the app calls — `create_pending_redemption`,
-   `fulfill_redemption`, `admin_list_staff_with_email` — and whatever
-   trigger stamps `reviews.xp_awarded`/`points_awarded` only exist on the
-   original live project. They were never captured into a migration (no
-   Docker available when this was last reconciled, so `supabase db dump`
-   couldn't run). Pull their definitions from that project's dashboard
-   (Database → Functions) before a fresh project will support redemptions
-   or reviews end-to-end.
-4. Deploy the edge functions (used for QR check-in token signing):
+3. Deploy the edge functions (used for QR check-in token signing):
    ```
    supabase functions deploy mint-checkin-token
    supabase functions deploy resolve-checkin-token
@@ -39,7 +32,7 @@ placeholder.
    ```
    (`migrate-character-art` and `rewrite-deal-ad` are optional utilities —
    see "Stubbed" below.)
-5. Grab your project URL and anon key from Project Settings > API.
+4. Grab your project URL and anon key from Project Settings > API.
 
 ## 2. Run the mobile app
 
@@ -133,9 +126,6 @@ to `ADMIN_EMAILS` in `staff-portal/src/App.jsx`.
   copy externally-hosted art into Supabase Storage, but nothing prompts
   staff to use it
 - Push notifications for evolution moments — not started
-- See the schema/migrations gap called out in step 1 above — redemptions
-  and reviews won't fully work on a *fresh* Supabase project until those
-  RPCs are captured
 
 ## Not covered here (brief's parallel track)
 

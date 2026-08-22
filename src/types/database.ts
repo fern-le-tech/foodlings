@@ -86,17 +86,17 @@ export type RedeemableReward = {
   created_at: string;
 };
 
+export type RedemptionStatus = "pending" | "fulfilled" | "cancelled";
+
 // `status`/`fulfilled_at`/`fulfilled_by` back the create_pending_redemption /
 // fulfill_redemption RPC flow (points reserved on redeem, spent on staff scan
-// confirmation) — live on the DB but not yet captured in supabase/schema.sql.
-// `status` is left as `string` rather than a guessed union since only
-// "fulfilled" is confirmed by client code (RedeemQRScreen); the live column
-// itself is untyped text, not a Postgres enum.
+// confirmation). Confirmed via the live redemptions_status_check constraint
+// (supabase/migrations/20260821000000_capture_deals_reviews_redemption_status.sql).
 export type Redemption = {
   id: string;
   user_id: string;
   reward_id: string;
-  status: string;
+  status: RedemptionStatus;
   redeemed_at: string;
   fulfilled_at: string | null;
   fulfilled_by: string | null;
