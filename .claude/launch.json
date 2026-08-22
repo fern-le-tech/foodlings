@@ -6,6 +6,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["expo", "start", "--web"],
       "port": 8081
+    },
+    {
+      "name": "staff-portal",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "staff-portal", "run", "dev"],
+      "port": 5173
     }
   ]
 }
