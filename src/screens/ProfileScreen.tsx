@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { supabase } from "@/lib/supabase";
-import { colors, spacing, radii } from "@/theme/colors";
+import { colors, spacing, radii, TAB_BAR_CLEARANCE } from "@/theme/colors";
 import { AvatarPickerModal } from "@/components/AvatarPickerModal";
 import { XPBar } from "@/components/XPBar";
 import type { User } from "@/types/database";
@@ -406,7 +406,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background },
-  content: { paddingBottom: spacing.xl },
+  content: { paddingBottom: TAB_BAR_CLEARANCE },
   banner: { width: "100%" },
   body: { paddingHorizontal: spacing.md },
   // Pulls the avatar up so it straddles the banner/body boundary, "trainer

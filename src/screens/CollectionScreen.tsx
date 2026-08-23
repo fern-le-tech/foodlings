@@ -3,7 +3,7 @@ import { View, Text, FlatList, StyleSheet, ActivityIndicator } from "react-nativ
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "@/lib/supabase";
-import { colors, spacing } from "@/theme/colors";
+import { colors, spacing, TAB_BAR_CLEARANCE } from "@/theme/colors";
 import { CharacterCard } from "@/components/CharacterCard";
 import type { FoodlingCharacter, Restaurant, UserRestaurantProgress } from "@/types/database";
 
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     borderColor: device.bezel,
     overflow: "hidden",
   },
-  grid: { paddingHorizontal: spacing.sm, paddingTop: spacing.sm, paddingBottom: spacing.lg },
+  grid: { paddingHorizontal: spacing.sm, paddingTop: spacing.sm, paddingBottom: TAB_BAR_CLEARANCE },
   emptyState: {
     flex: 1,
     alignItems: "center",

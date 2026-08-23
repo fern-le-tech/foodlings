@@ -4,7 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "@/lib/supabase";
-import { colors, spacing, radii } from "@/theme/colors";
+import { colors, spacing, radii, TAB_BAR_CLEARANCE } from "@/theme/colors";
 import type { LeaderboardRow } from "@/types/database";
 
 type SortMode = "collection_size" | "total_xp";
@@ -98,7 +98,7 @@ export function LeaderboardScreen() {
         <FlatList
           data={restRows}
           keyExtractor={(item) => item.user_id}
-          contentContainerStyle={{ padding: spacing.md, paddingTop: spacing.sm }}
+          contentContainerStyle={{ padding: spacing.md, paddingTop: spacing.sm, paddingBottom: TAB_BAR_CLEARANCE }}
           ListHeaderComponent={
             podiumRows.length > 0 ? (
               <View style={styles.podiumRow}>

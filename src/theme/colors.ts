@@ -34,3 +34,9 @@ export const radii = {
   card: 12,
   pill: 999,
 } as const;
+
+// The bottom tab bar (RootNavigator) floats over content — position:
+// "absolute", height 68 + bottom offset 16 — rather than pushing it up, so
+// any scrollable screen's last item needs at least this much bottom
+// padding or it renders underneath the tab bar and becomes untappable.
+export const TAB_BAR_CLEARANCE = 100;

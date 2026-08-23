@@ -4,7 +4,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "@/lib/supabase";
-import { colors, spacing, radii } from "@/theme/colors";
+import { colors, spacing, radii, TAB_BAR_CLEARANCE } from "@/theme/colors";
 import type { Restaurant } from "@/types/database";
 
 interface CharacterRow {
@@ -151,7 +151,7 @@ export function RestaurantDirectoryScreen() {
         data={restaurants}
         keyExtractor={(item) => item.id}
         style={styles.list}
-        contentContainerStyle={{ padding: spacing.md, paddingTop: spacing.md }}
+        contentContainerStyle={{ padding: spacing.md, paddingTop: spacing.md, paddingBottom: TAB_BAR_CLEARANCE }}
         renderItem={({ item, index }) => {
           const character = charactersByRestaurant.get(item.id);
           const progress = progressByRestaurant.get(item.id);
