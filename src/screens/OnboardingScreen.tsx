@@ -112,7 +112,17 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
       if (verifyError) throw verifyError;
 
       const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
-      if (updateError) throw updateError;
+      if (updateError) {
+        // verifyOtp already established a session as a side effect, even
+        // though the password itself was never actually changed (e.g. if
+        // newPassword matches the old one and Supabase rejects it). Sign
+        // back out rather than leaving the person logged in believing the
+        // reset worked while their old password is still the real one —
+        // they'll need to request a fresh code, since this one was already
+        // consumed by verifyOtp.
+        await supabase.auth.signOut();
+        throw updateError;
+      }
 
       Alert.alert("Password updated", "You're all set — you're now logged in.");
       // A successful verifyOtp + updateUser already establishes a session,
