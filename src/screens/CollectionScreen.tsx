@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "@/lib/supabase";
@@ -43,10 +43,15 @@ export function CollectionScreen() {
   const navigation = useNavigation<any>();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -74,6 +79,7 @@ export function CollectionScreen() {
 
     setRows(merged);
     setLoading(false);
+    setRefreshing(false);
   }, []);
 
   // Refetch every time this tab regains focus (not just on first mount) —
@@ -146,46 +152,50 @@ export function CollectionScreen() {
       {/* Seam line simulating the case hinge before the screen begins */}
       <View style={styles.seam} />
 
-      {/* Inset "screen" housing the grid — or an empty state before anything's collected */}
+      {/* Inset "screen" housing the grid — ListEmptyComponent covers the
+          before-anything's-collected state, rather than a separate
+          non-scrollable View, so pull-to-refresh still works either way. */}
       <View style={styles.screen}>
-        {collectedRows.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyGlyph}>???</Text>
-            <Text style={styles.emptyText}>
-              Explore Denver food spots to add Foodlings to your collection.
-            </Text>
-          </View>
-        ) : (
-          <FlatList
-            data={collectedRows}
-            keyExtractor={(item) => item.character.id}
-            numColumns={2}
-            contentContainerStyle={styles.grid}
-            renderItem={({ item }) => (
-              <CharacterCard
-                name={
-                  item.progress?.current_stage === 3
-                    ? item.character.name_stage3
-                    : item.progress?.current_stage === 2
-                      ? item.character.name_stage2
-                      : item.character.name_stage1
-                }
-                artUrl={
-                  item.progress?.current_stage === 3
-                    ? item.character.art_url_stage3
-                    : item.progress?.current_stage === 2
-                      ? item.character.art_url_stage2
-                      : item.character.art_url_stage1
-                }
-                restaurantName={item.restaurant.name}
-                isLocked={false}
-                onPress={() =>
-                  navigation.navigate("CharacterDetail", { restaurantId: item.restaurant.id })
-                }
-              />
-            )}
-          />
-        )}
+        <FlatList
+          data={collectedRows}
+          keyExtractor={(item) => item.character.id}
+          numColumns={2}
+          contentContainerStyle={[styles.grid, { flexGrow: 1 }]}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={device.shell} />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyGlyph}>???</Text>
+              <Text style={styles.emptyText}>
+                Explore Denver food spots to add Foodlings to your collection.
+              </Text>
+            </View>
+          }
+          renderItem={({ item }) => (
+            <CharacterCard
+              name={
+                item.progress?.current_stage === 3
+                  ? item.character.name_stage3
+                  : item.progress?.current_stage === 2
+                    ? item.character.name_stage2
+                    : item.character.name_stage1
+              }
+              artUrl={
+                item.progress?.current_stage === 3
+                  ? item.character.art_url_stage3
+                  : item.progress?.current_stage === 2
+                    ? item.character.art_url_stage2
+                    : item.character.art_url_stage1
+              }
+              restaurantName={item.restaurant.name}
+              isLocked={false}
+              onPress={() =>
+                navigation.navigate("CharacterDetail", { restaurantId: item.restaurant.id })
+              }
+            />
+          )}
+        />
       </View>
 
       {/* A couple of small screw-style dots along the bottom edge for realism */}

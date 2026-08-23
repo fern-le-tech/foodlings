@@ -1,5 +1,14 @@
-import { useEffect, useState } from "react";
-import { View, Text, Image, FlatList, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  Image,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -41,18 +50,29 @@ export function LeaderboardScreen() {
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
   const [sortMode, setSortMode] = useState<SortMode>("collection_size");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
+  const load = useCallback(
+    async (isRefresh = false) => {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       const { data } = await supabase
         .rpc("friends_leaderboard")
         .order(sortMode, { ascending: false })
         .limit(50);
       setRows(data ?? []);
       setLoading(false);
-    })();
-  }, [sortMode]);
+      setRefreshing(false);
+    },
+    [sortMode]
+  );
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const valueFor = (row: LeaderboardRow) =>
     sortMode === "collection_size" ? row.collection_size : row.total_xp;
@@ -107,6 +127,9 @@ export function LeaderboardScreen() {
           data={rows}
           keyExtractor={(item) => item.user_id}
           contentContainerStyle={{ padding: spacing.md, paddingTop: spacing.sm, paddingBottom: TAB_BAR_CLEARANCE }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={BOARD_RED} />
+          }
           renderItem={({ item, index }) => {
             const rank = index + 1;
             const accent = rankAccent(rank);

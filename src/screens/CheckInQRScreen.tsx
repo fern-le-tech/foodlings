@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import QRCode from "react-native-qrcode-svg";
 import { useNavigation } from "@react-navigation/native";
@@ -44,6 +44,7 @@ export function CheckInQRScreen() {
   const navigation = useNavigation<any>();
   const [token, setToken] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(ROTATE_INTERVAL_MS / 1000);
+  const [refreshing, setRefreshing] = useState(false);
 
   const mintToken = useCallback(async () => {
     const {
@@ -151,6 +152,15 @@ export function CheckInQRScreen() {
     };
   }, [navigation]);
 
+  // Pull-to-refresh here mints a fresh token immediately instead of
+  // waiting out the rest of the 3-minute rotation — useful if staff's
+  // scanner didn't catch the current code in time.
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await mintToken();
+    setRefreshing(false);
+  }, [mintToken]);
+
   return (
     <LinearGradient colors={[device.shellLight, device.shell]} style={styles.shell}>
       <View style={styles.statusRow}>
@@ -168,7 +178,12 @@ export function CheckInQRScreen() {
       <View style={styles.seam} />
 
       <View style={styles.screen}>
-        <View style={styles.centered}>
+        <ScrollView
+          contentContainerStyle={styles.centered}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={device.shell} />
+          }
+        >
           <View style={styles.qrWrap}>
             {token ? (
               <QRCode value={token} size={220} backgroundColor={colors.surface} />
@@ -178,7 +193,7 @@ export function CheckInQRScreen() {
           </View>
           <Text style={styles.subtitle}>Show this to staff</Text>
           <Text style={styles.rotateHint}>Refreshes in {formatCountdown(secondsLeft)}</Text>
-        </View>
+        </ScrollView>
       </View>
 
       <View style={styles.footerDots}>
@@ -248,7 +263,7 @@ const styles = StyleSheet.create({
     borderColor: device.bezel,
     overflow: "hidden",
   },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg },
+  centered: { flexGrow: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg },
   qrWrap: {
     backgroundColor: colors.surface,
     padding: spacing.lg,

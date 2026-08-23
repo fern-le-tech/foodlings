@@ -1,5 +1,15 @@
-import { useEffect, useState } from "react";
-import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator, Linking, Pressable } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  Linking,
+  Pressable,
+  RefreshControl,
+} from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -49,6 +59,7 @@ export function PublicProfileScreen() {
   const { userId } = route.params as { userId: string };
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [totalCharacters, setTotalCharacters] = useState(0);
   const [collectedCount, setCollectedCount] = useState(0);
@@ -58,9 +69,13 @@ export function PublicProfileScreen() {
   const [favorite, setFavorite] = useState<ProgressRow | null>(null);
   const [favoriteChar, setFavoriteChar] = useState<FavoriteCharacter | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
+  const loadAll = useCallback(
+    async (isRefresh = false) => {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
 
       const [{ data: userRow }, { count: characterCount }, { data: progressRows }, { data: checkins }] =
         await Promise.all([
@@ -102,8 +117,14 @@ export function PublicProfileScreen() {
       }
 
       setLoading(false);
-    })();
-  }, [userId]);
+      setRefreshing(false);
+    },
+    [userId]
+  );
+
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
 
   if (loading || !user) {
     return (
@@ -135,7 +156,13 @@ export function PublicProfileScreen() {
         : favoriteChar.art_url_stage1);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={() => loadAll(true)} tintColor={PROFILE_RED} />
+      }
+    >
       <LinearGradient
         colors={[PROFILE_RED, PROFILE_RED_LIGHT]}
         style={[styles.banner, { height: insets.top + BANNER_HEIGHT }]}

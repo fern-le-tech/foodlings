@@ -11,6 +11,7 @@ import {
   TextInput,
   Alert,
   Modal,
+  RefreshControl,
 } from "react-native";
 import { useRoute, useNavigation, useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -76,6 +77,7 @@ export function CharacterDetailScreen() {
 
   const [tab, setTab] = useState<Tab>("about");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [character, setCharacter] = useState<FoodlingCharacter | null>(null);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [progress, setProgress] = useState<UserRestaurantProgress | null>(null);
@@ -199,33 +201,44 @@ export function CharacterDetailScreen() {
     }
   };
 
+  const loadAll = useCallback(
+    async (isRefresh = false) => {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUserId(user?.id ?? null);
+
+      const [{ data: characterData }, { data: restaurantData }] = await Promise.all([
+        supabase.from("foodling_characters").select("*").eq("restaurant_id", restaurantId).single(),
+        supabase.from("restaurants").select("*").eq("id", restaurantId).single(),
+      ]);
+
+      setCharacter(characterData);
+      setRestaurant(restaurantData);
+
+      await loadActiveDeal(user?.id ?? null);
+
+      if (user) {
+        await Promise.all([loadProgress(user.id), loadPointsAndRewards(user.id), loadReviews(user.id)]);
+      } else {
+        await loadReviews(null);
+      }
+
+      setLoading(false);
+      setRefreshing(false);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [restaurantId]
+  );
+
   useFocusEffect(
     useCallback(() => {
-      (async () => {
-        setLoading(true);
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        setUserId(user?.id ?? null);
-
-        const [{ data: characterData }, { data: restaurantData }] = await Promise.all([
-          supabase.from("foodling_characters").select("*").eq("restaurant_id", restaurantId).single(),
-          supabase.from("restaurants").select("*").eq("id", restaurantId).single(),
-        ]);
-
-        setCharacter(characterData);
-        setRestaurant(restaurantData);
-
-        await loadActiveDeal(user?.id ?? null);
-
-        if (user) {
-          await Promise.all([loadProgress(user.id), loadPointsAndRewards(user.id), loadReviews(user.id)]);
-        } else {
-          await loadReviews(null);
-        }
-
-        setLoading(false);
-      })();
+      loadAll();
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [restaurantId])
   );
@@ -497,7 +510,13 @@ export function CharacterDetailScreen() {
       <View style={styles.seam} />
 
       <View style={styles.screen}>
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => loadAll(true)} tintColor={device.caseText} />
+          }
+        >
           <View style={styles.heroWrap}>
             <XPBar
               currentXp={progress?.current_xp ?? 0}

@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, Image } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+  Image,
+  RefreshControl,
+} from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -39,9 +48,11 @@ export function RestaurantDirectoryScreen() {
     new Map()
   );
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -70,6 +81,7 @@ export function RestaurantDirectoryScreen() {
       new Map((progressResult.data ?? []).map((p: ProgressRow) => [p.restaurant_id, p]))
     );
     setLoading(false);
+    setRefreshing(false);
   }, []);
 
   // Refetch every time this tab regains focus — a fresh check-in on
@@ -150,6 +162,9 @@ export function RestaurantDirectoryScreen() {
       <FlatList
         data={restaurants}
         keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={DIRECTORY_RED} />
+        }
         style={styles.list}
         contentContainerStyle={{ padding: spacing.md, paddingTop: spacing.md, paddingBottom: TAB_BAR_CLEARANCE }}
         renderItem={({ item, index }) => {

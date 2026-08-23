@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Modal,
   ScrollView,
+  RefreshControl,
   useWindowDimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
@@ -64,6 +65,7 @@ export function DailyDealsScreen() {
   const [userId, setUserId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"all" | "saved">("all");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedDeal, setSelectedDeal] = useState<DealRow | null>(null);
 
@@ -101,6 +103,13 @@ export function DailyDealsScreen() {
       })();
     }, [loadDeals])
   );
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadDeals();
+    setActiveIndex(0);
+    setRefreshing(false);
+  }, [loadDeals]);
 
   const toggleSave = async (dealId: string) => {
     if (!userId) return;
@@ -176,6 +185,13 @@ export function DailyDealsScreen() {
         <View style={styles.perforationNotchRight} />
       </View>
 
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={styles.bodyContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={HOME_RED} />
+        }
+      >
       {visibleDeals.length === 0 ? (
         <View style={styles.emptyState}>
           <MaterialCommunityIcons
@@ -271,6 +287,7 @@ export function DailyDealsScreen() {
           )}
         </>
       )}
+      </ScrollView>
 
       <Modal visible={!!selectedDeal} animationType="slide" transparent onRequestClose={() => setSelectedDeal(null)}>
         <View style={styles.modalBackdrop}>
@@ -334,6 +351,8 @@ export function DailyDealsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  body: { flex: 1 },
+  bodyContent: { flexGrow: 1 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
   header: {
     paddingHorizontal: spacing.lg,
