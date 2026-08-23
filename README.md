@@ -136,5 +136,13 @@ to `ADMIN_EMAILS` in `staff-portal/src/App.jsx`.
 
 ## Not covered here (brief's parallel track)
 
-Partner agreements, privacy policy/ToS, Play Store developer account setup —
-business/legal work, not code.
+Partner agreements, Play Store developer account setup, Google Play's
+closed-testing requirement (12 testers opted in for 14+ days before
+production access) — business/legal work, not code.
+
+A **draft** privacy policy exists at `legal/PRIVACY_POLICY.md` — written
+from what the app's schema actually collects, but it has placeholder
+business details and needs real review (ideally legal) before submission,
+especially once payment/revenue-share features go live. `eas.json` is set
+up for EAS Build; running an actual build still needs `eas login` +
+`eas init` with your own Expo account.
