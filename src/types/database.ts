@@ -246,6 +246,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: AdminStaffWithEmail[];
       };
+      delete_my_account: {
+        Args: Record<PropertyKey, never>;
+        Returns: void;
+      };
     };
   };
 };

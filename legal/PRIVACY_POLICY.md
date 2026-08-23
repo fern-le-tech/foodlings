@@ -75,11 +75,10 @@ We do not share your information with advertisers or data brokers.
 ## Data retention and deletion
 
 We retain your account information for as long as your account is
-active. To request deletion of your account and associated data, contact
-us at [YOUR CONTACT EMAIL]. [NOTE: the app does not currently have a
-self-serve "delete my account" option in-app — Google and Apple
-increasingly expect one. Consider adding this before submission, or be
-prepared to handle deletion requests manually and promptly.]
+active. You can permanently delete your account and all associated data
+at any time from the Profile tab in the app ("Delete account"), or by
+contacting us at [YOUR CONTACT EMAIL]. Deletion is immediate and cannot
+be undone.
 
 ## Children's privacy
 

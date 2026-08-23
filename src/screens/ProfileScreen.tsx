@@ -75,6 +75,7 @@ export function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const [avatarPickerVisible, setAvatarPickerVisible] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const load = async (isRefresh = false) => {
     if (isRefresh) {
@@ -185,6 +186,34 @@ export function ProfileScreen() {
     if (error) {
       Alert.alert("Couldn't log out", error.message);
     }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete your account?",
+      "This permanently deletes your account, collection progress, reviews, and check-in history. This can't be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete account",
+          style: "destructive",
+          onPress: async () => {
+            setDeletingAccount(true);
+            const { error } = await supabase.rpc("delete_my_account");
+            if (error) {
+              setDeletingAccount(false);
+              Alert.alert("Couldn't delete account", error.message);
+              return;
+            }
+            // The RPC only removes the server-side rows — sign out locally
+            // too so the cached session doesn't linger and cause confusing
+            // "nothing works but no error shows" behavior for an account
+            // that no longer exists server-side.
+            await supabase.auth.signOut();
+          },
+        },
+      ]
+    );
   };
 
   if (loading || !user) {
@@ -348,6 +377,16 @@ export function ProfileScreen() {
         <Pressable style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutLabel}>Log out</Text>
         </Pressable>
+
+        <Pressable
+          style={styles.deleteAccountButton}
+          onPress={handleDeleteAccount}
+          disabled={deletingAccount}
+        >
+          <Text style={styles.deleteAccountLabel}>
+            {deletingAccount ? "Deleting…" : "Delete account"}
+          </Text>
+        </Pressable>
       </View>
     </ScrollView>
   );
@@ -493,4 +532,12 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   logoutLabel: { fontSize: 14, color: colors.accentAlert, fontWeight: "600" },
+  // Deliberately quieter than Log out — same destructive color, but
+  // smaller and lower on the screen so it can't be tapped by mistake
+  // reaching for the far more common logout action just above it.
+  deleteAccountButton: {
+    marginTop: spacing.md,
+    alignSelf: "center",
+  },
+  deleteAccountLabel: { fontSize: 12, color: colors.accentAlert, opacity: 0.7 },
 });
