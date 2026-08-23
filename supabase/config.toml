@@ -1,4 +1,41 @@
 
+# IMPORTANT: `supabase config push` resets any field NOT declared here back
+# to the CLI's own defaults for the whole top-level section it belongs to
+# (e.g. [auth]) -- it does not leave undeclared fields alone. Learned this
+# the hard way: an earlier push that only declared the recovery template
+# also silently reset site_url, redirect URLs, MFA enrollment, the
+# password-reset rate limit, and the OTP code length to CLI defaults. Every
+# field below is declared explicitly and restored to the project's real
+# values (confirmed via the diff `config push` printed before/after) for
+# exactly that reason -- don't remove fields from this file without
+# checking a `config push` diff first.
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = []
+
+[auth.email]
+max_frequency = "1m0s"
+otp_length = 8
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+# No link/button by design -- the app's password reset screen expects a
+# typed-in 6-digit code (see src/screens/OnboardingScreen.tsx), which
+# requires {{ .Token }} in the template. Supabase's default template uses
+# {{ .ConfirmationURL }} instead and sends a link with no code at all.
+[auth.email.template.recovery]
+subject = "Reset your Foodlings password"
+content_path = "./supabase/templates/recovery.html"
+
+# CLI default is `true`, which requires a paid tier and made the previous
+# push fail outright at this step (after the [auth] section had already
+# been applied) -- this project is on the free tier and doesn't use vector
+# buckets, so keep this explicitly false.
+[storage.vector]
+enabled = false
+
 [functions.migrate-character-art]
 enabled = true
 verify_jwt = false
