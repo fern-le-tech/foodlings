@@ -14,15 +14,26 @@ type SortMode = "collection_size" | "total_xp";
 // so these screens read as one family rather than each inventing its own.
 const BOARD_RED = "#D8342B";
 const BOARD_RED_LIGHT = "#E8776D";
-const MEDAL_GOLD = "#F5C518";
-const MEDAL_SILVER = "#AEB4BD";
-const MEDAL_BRONZE = "#C97B3D";
+const BOARD_RED_SOFT = "#FBE4E1";
 
-const PODIUM_ORDER: Array<{ rank: 1 | 2 | 3; height: number; medal: string }> = [
-  { rank: 2, height: 108, medal: MEDAL_SILVER },
-  { rank: 1, height: 140, medal: MEDAL_GOLD },
-  { rank: 3, height: 88, medal: MEDAL_BRONZE },
-];
+// One unified list rather than a separate podium block for the top 3 —
+// a literal gold/silver/bronze podium is a pattern borrowed from generic
+// sports-app templates and clashed with the app's own device-readout
+// language elsewhere. Top ranks taper off using Foodlings' own red accent
+// and monospace numerals instead: rank 1 gets a full tinted card, ranks
+// 2-3 get progressively smaller call-outs, rank 4+ is the plain row.
+function rankAccent(rank: number) {
+  if (rank === 1) {
+    return { card: styles.rowRank1, avatar: 44, rankSize: 22, rankColor: BOARD_RED };
+  }
+  if (rank === 2) {
+    return { card: styles.rowRank2, avatar: 38, rankSize: 18, rankColor: BOARD_RED };
+  }
+  if (rank === 3) {
+    return { card: styles.rowRank3, avatar: 34, rankSize: 16, rankColor: BOARD_RED };
+  }
+  return { card: null, avatar: 32, rankSize: 14, rankColor: colors.textSecondary };
+}
 
 export function LeaderboardScreen() {
   const navigation = useNavigation<any>();
@@ -45,9 +56,6 @@ export function LeaderboardScreen() {
 
   const valueFor = (row: LeaderboardRow) =>
     sortMode === "collection_size" ? row.collection_size : row.total_xp;
-
-  const podiumRows = rows.slice(0, 3);
-  const restRows = rows.slice(3);
 
   return (
     <View style={styles.screen}>
@@ -96,60 +104,40 @@ export function LeaderboardScreen() {
         </Text>
       ) : (
         <FlatList
-          data={restRows}
+          data={rows}
           keyExtractor={(item) => item.user_id}
           contentContainerStyle={{ padding: spacing.md, paddingTop: spacing.sm, paddingBottom: TAB_BAR_CLEARANCE }}
-          ListHeaderComponent={
-            podiumRows.length > 0 ? (
-              <View style={styles.podiumRow}>
-                {PODIUM_ORDER.map(({ rank, height, medal }) => {
-                  const row = podiumRows[rank - 1];
-                  if (!row) return <View key={rank} style={styles.podiumSlotEmpty} />;
-                  return (
-                    <Pressable
-                      key={rank}
-                      style={styles.podiumSlot}
-                      onPress={() => navigation.navigate("PublicProfile", { userId: row.user_id })}
-                    >
-                      {row.avatar_url ? (
-                        <Image source={{ uri: row.avatar_url }} style={styles.podiumAvatar} />
-                      ) : (
-                        <View style={[styles.podiumAvatar, styles.podiumAvatarFallback]}>
-                          <Text style={styles.podiumAvatarInitial}>
-                            {row.display_name.charAt(0).toUpperCase()}
-                          </Text>
-                        </View>
-                      )}
-                      <Text style={styles.podiumName} numberOfLines={1}>
-                        {row.display_name}
-                      </Text>
-                      <Text style={[styles.podiumValue, { color: medal }]}>{valueFor(row)}</Text>
-                      <View style={[styles.podiumBlock, { height, backgroundColor: medal }]}>
-                        <Text style={styles.podiumRank}>{rank}</Text>
-                      </View>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            ) : null
-          }
-          renderItem={({ item, index }) => (
-            <Pressable
-              style={styles.row}
-              onPress={() => navigation.navigate("PublicProfile", { userId: item.user_id })}
-            >
-              <Text style={styles.rank}>{index + 4}</Text>
-              {item.avatar_url ? (
-                <Image source={{ uri: item.avatar_url }} style={styles.avatar} />
-              ) : (
-                <View style={styles.avatarFallback}>
-                  <Text style={styles.avatarInitial}>{item.display_name.charAt(0).toUpperCase()}</Text>
-                </View>
-              )}
-              <Text style={styles.name}>{item.display_name}</Text>
-              <Text style={styles.value}>{valueFor(item)}</Text>
-            </Pressable>
-          )}
+          renderItem={({ item, index }) => {
+            const rank = index + 1;
+            const accent = rankAccent(rank);
+            return (
+              <Pressable
+                style={[styles.row, accent.card]}
+                onPress={() => navigation.navigate("PublicProfile", { userId: item.user_id })}
+              >
+                <Text style={[styles.rank, { fontSize: accent.rankSize, color: accent.rankColor }]}>
+                  {rank}
+                </Text>
+                {item.avatar_url ? (
+                  <Image
+                    source={{ uri: item.avatar_url }}
+                    style={[styles.avatar, { width: accent.avatar, height: accent.avatar, borderRadius: accent.avatar / 2 }]}
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.avatarFallback,
+                      { width: accent.avatar, height: accent.avatar, borderRadius: accent.avatar / 2 },
+                    ]}
+                  >
+                    <Text style={styles.avatarInitial}>{item.display_name.charAt(0).toUpperCase()}</Text>
+                  </View>
+                )}
+                <Text style={styles.name}>{item.display_name}</Text>
+                <Text style={styles.value}>{valueFor(item)}</Text>
+              </Pressable>
+            );
+          }}
         />
       )}
     </View>
@@ -216,44 +204,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  podiumRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "center",
-    marginBottom: spacing.lg,
-    paddingTop: spacing.md,
-  },
-  podiumSlot: { flex: 1, alignItems: "center", marginHorizontal: spacing.xs },
-  podiumSlotEmpty: { flex: 1, marginHorizontal: spacing.xs },
-  podiumAvatar: { width: 56, height: 56, borderRadius: 28, marginBottom: spacing.xs },
-  podiumAvatarFallback: {
-    backgroundColor: colors.surfaceMuted,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  podiumAvatarInitial: { fontSize: 20, fontWeight: "700", color: colors.textPrimary },
-  podiumName: { fontSize: 13, fontWeight: "700", color: colors.textPrimary, maxWidth: 90 },
-  podiumValue: {
-    fontFamily: "monospace",
-    fontSize: 13,
-    fontWeight: "800",
-    marginBottom: spacing.xs,
-  },
-  podiumBlock: {
-    width: "100%",
-    borderTopLeftRadius: radii.card,
-    borderTopRightRadius: radii.card,
-    alignItems: "center",
-    justifyContent: "flex-start",
-    paddingTop: spacing.xs,
-  },
-  podiumRank: {
-    fontFamily: "monospace",
-    fontSize: 20,
-    fontWeight: "800",
-    color: "rgba(0,0,0,0.35)",
-  },
-
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -264,17 +214,29 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
-  rank: {
-    width: 28,
-    fontFamily: "monospace",
-    fontWeight: "700",
-    color: colors.textSecondary,
+  // Tapering emphasis for the top 3 — full tint + thick border for #1,
+  // white card with a red border for #2, white card with just a red
+  // border-left accent for #3, plain for everyone else.
+  rowRank1: {
+    backgroundColor: BOARD_RED_SOFT,
+    borderColor: BOARD_RED,
+    borderWidth: 1.5,
   },
-  avatar: { width: 32, height: 32, borderRadius: 16, marginRight: spacing.sm },
-  avatarFallback: {
+  rowRank2: {
+    borderColor: BOARD_RED,
+    borderWidth: 1.5,
+  },
+  rowRank3: {
+    borderLeftColor: BOARD_RED,
+    borderLeftWidth: 3,
+  },
+  rank: {
     width: 32,
-    height: 32,
-    borderRadius: 16,
+    fontFamily: "monospace",
+    fontWeight: "800",
+  },
+  avatar: { marginRight: spacing.sm },
+  avatarFallback: {
     backgroundColor: colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
