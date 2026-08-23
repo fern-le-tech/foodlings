@@ -13,12 +13,22 @@ import {
   RefreshControl,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { supabase } from "@/lib/supabase";
 import { colors, spacing, radii } from "@/theme/colors";
 import { AvatarPickerModal } from "@/components/AvatarPickerModal";
 import { XPBar } from "@/components/XPBar";
 import type { User } from "@/types/database";
+
+// Same red used on Directory/Leaderboard/Home/Collection — a "trainer
+// card" banner behind the avatar rather than a full-page background, so
+// the stat cards and favorite-Foodling art stay legible on the neutral
+// body below it.
+const PROFILE_RED = "#D8342B";
+const PROFILE_RED_LIGHT = "#E8776D";
+const BANNER_HEIGHT = 120;
 
 interface ProgressRow {
   restaurant_id: string;
@@ -47,6 +57,7 @@ interface FavoriteCharacter {
  * optional Instagram link the person can add themselves.
  */
 export function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -179,7 +190,7 @@ export function ProfileScreen() {
   if (loading || !user) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={colors.accentEvolution} />
+        <ActivityIndicator color={PROFILE_RED} />
       </View>
     );
   }
@@ -210,131 +221,134 @@ export function ProfileScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
       refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={() => load(true)}
-          tintColor={colors.accentEvolution}
-        />
+        <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={PROFILE_RED} />
       }
     >
-      <View style={styles.header}>
-        <Pressable onPress={() => setAvatarPickerVisible(true)}>
-          {user.avatar_url ? (
-            <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarFallback}>
-              <Text style={styles.avatarInitial}>{user.display_name.charAt(0).toUpperCase()}</Text>
-            </View>
-          )}
-          <View style={styles.avatarEditBadge}>
-            <Text style={styles.avatarEditBadgeLabel}>Edit</Text>
-          </View>
-        </Pressable>
+      <LinearGradient
+        colors={[PROFILE_RED, PROFILE_RED_LIGHT]}
+        style={[styles.banner, { height: insets.top + BANNER_HEIGHT }]}
+      />
 
-        {editingName ? (
-          <View style={styles.nameEditRow}>
-            <TextInput
-              style={styles.nameInput}
-              value={nameInput}
-              onChangeText={setNameInput}
-              placeholder="Your name"
-              placeholderTextColor={colors.textDisabled}
-              autoFocus
-              maxLength={40}
-            />
-            <Pressable onPress={saveName} disabled={savingName}>
-              <Text style={styles.saveLabel}>{savingName ? "Saving…" : "Save"}</Text>
+      <View style={styles.body}>
+        <View style={styles.header}>
+          <Pressable onPress={() => setAvatarPickerVisible(true)}>
+            {user.avatar_url ? (
+              <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarFallback}>
+                <Text style={styles.avatarInitial}>{user.display_name.charAt(0).toUpperCase()}</Text>
+              </View>
+            )}
+            <View style={styles.avatarEditBadge}>
+              <Text style={styles.avatarEditBadgeLabel}>Edit</Text>
+            </View>
+          </Pressable>
+
+          {editingName ? (
+            <View style={styles.nameEditRow}>
+              <TextInput
+                style={styles.nameInput}
+                value={nameInput}
+                onChangeText={setNameInput}
+                placeholder="Your name"
+                placeholderTextColor={colors.textDisabled}
+                autoFocus
+                maxLength={40}
+              />
+              <Pressable onPress={saveName} disabled={savingName}>
+                <Text style={styles.saveLabel}>{savingName ? "Saving…" : "Save"}</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable onPress={() => setEditingName(true)}>
+              <Text style={styles.displayName}>{user.display_name} ✎</Text>
             </Pressable>
+          )}
+
+          <Text style={styles.joinedLabel}>Joined {joinedLabel}</Text>
+        </View>
+
+        <AvatarPickerModal
+          visible={avatarPickerVisible}
+          currentUrl={user.avatar_url}
+          onSelect={selectAvatar}
+          onClose={() => setAvatarPickerVisible(false)}
+        />
+
+        <View style={styles.statsGrid}>
+          <StatCard label="Foodlings collected" value={`${collectedCount} / ${totalCharacters}`} />
+          <StatCard label="Regions visited" value={String(regionCount)} />
+          <StatCard label="Total XP (all-time)" value={totalXp.toLocaleString()} />
+          <StatCard label="Reward points (all-time)" value={totalPoints.toLocaleString()} />
+        </View>
+
+        <Text style={styles.sectionLabel}>Favorite Foodling</Text>
+        {favorite && favoriteChar ? (
+          <View style={styles.favoriteCard}>
+            <View style={styles.favoriteTopRow}>
+              {favoriteArt ? (
+                <Image source={{ uri: favoriteArt }} style={styles.favoriteArt} resizeMode="contain" />
+              ) : (
+                <View style={styles.favoriteArtPlaceholder} />
+              )}
+              <View style={styles.favoriteTextCol}>
+                <Text style={styles.favoriteName}>{favoriteName}</Text>
+                <Text style={styles.favoriteRestaurant}>{favorite.restaurants?.name}</Text>
+              </View>
+            </View>
+
+            {favoriteStage < 3 && (
+              <View style={styles.favoriteXpBarWrap}>
+                <XPBar
+                  currentXp={favorite.current_xp}
+                  currentStage={favoriteStage}
+                  xpThresholdStage2={favoriteChar.xp_threshold_stage2}
+                  xpThresholdStage3={favoriteChar.xp_threshold_stage3}
+                />
+              </View>
+            )}
           </View>
         ) : (
-          <Pressable onPress={() => setEditingName(true)}>
-            <Text style={styles.displayName}>{user.display_name} ✎</Text>
+          <Text style={styles.emptyText}>Check in somewhere to get your first Foodling.</Text>
+        )}
+
+        <Text style={styles.sectionLabel}>Instagram</Text>
+        {editingInstagram ? (
+          <View style={styles.instagramEditRow}>
+            <Text style={styles.instagramAt}>@</Text>
+            <TextInput
+              style={styles.instagramInput}
+              value={instagramInput}
+              onChangeText={setInstagramInput}
+              placeholder="yourhandle"
+              placeholderTextColor={colors.textDisabled}
+              autoCapitalize="none"
+              autoFocus
+            />
+            <Pressable onPress={saveInstagram} disabled={saving}>
+              <Text style={styles.saveLabel}>{saving ? "Saving…" : "Save"}</Text>
+            </Pressable>
+          </View>
+        ) : user.instagram_handle ? (
+          <Pressable
+            style={styles.instagramRow}
+            onPress={() => Linking.openURL(`https://instagram.com/${user.instagram_handle}`)}
+            onLongPress={() => setEditingInstagram(true)}
+          >
+            <MaterialCommunityIcons name="instagram" size={18} color={PROFILE_RED} />
+            <Text style={styles.instagramLink}>@{user.instagram_handle}</Text>
+          </Pressable>
+        ) : (
+          <Pressable style={styles.instagramRow} onPress={() => setEditingInstagram(true)}>
+            <MaterialCommunityIcons name="instagram" size={18} color={colors.textSecondary} />
+            <Text style={styles.addInstagramLabel}>Add your Instagram</Text>
           </Pressable>
         )}
 
-        <Text style={styles.joinedLabel}>Joined {joinedLabel}</Text>
-      </View>
-
-      <AvatarPickerModal
-        visible={avatarPickerVisible}
-        currentUrl={user.avatar_url}
-        onSelect={selectAvatar}
-        onClose={() => setAvatarPickerVisible(false)}
-      />
-
-      <View style={styles.statsGrid}>
-        <StatCard label="Foodlings collected" value={`${collectedCount} / ${totalCharacters}`} />
-        <StatCard label="Regions visited" value={String(regionCount)} />
-        <StatCard label="Total XP (all-time)" value={totalXp.toLocaleString()} />
-        <StatCard label="Reward points (all-time)" value={totalPoints.toLocaleString()} />
-      </View>
-
-      <Text style={styles.sectionLabel}>Favorite Foodling</Text>
-      {favorite && favoriteChar ? (
-        <View style={styles.favoriteCard}>
-          <View style={styles.favoriteTopRow}>
-            {favoriteArt ? (
-              <Image source={{ uri: favoriteArt }} style={styles.favoriteArt} resizeMode="contain" />
-            ) : (
-              <View style={styles.favoriteArtPlaceholder} />
-            )}
-            <View style={styles.favoriteTextCol}>
-              <Text style={styles.favoriteName}>{favoriteName}</Text>
-              <Text style={styles.favoriteRestaurant}>{favorite.restaurants?.name}</Text>
-            </View>
-          </View>
-
-          {favoriteStage < 3 && (
-            <View style={styles.favoriteXpBarWrap}>
-              <XPBar
-                currentXp={favorite.current_xp}
-                currentStage={favoriteStage}
-                xpThresholdStage2={favoriteChar.xp_threshold_stage2}
-                xpThresholdStage3={favoriteChar.xp_threshold_stage3}
-              />
-            </View>
-          )}
-        </View>
-      ) : (
-        <Text style={styles.emptyText}>Check in somewhere to get your first Foodling.</Text>
-      )}
-
-      <Text style={styles.sectionLabel}>Instagram</Text>
-      {editingInstagram ? (
-        <View style={styles.instagramEditRow}>
-          <Text style={styles.instagramAt}>@</Text>
-          <TextInput
-            style={styles.instagramInput}
-            value={instagramInput}
-            onChangeText={setInstagramInput}
-            placeholder="yourhandle"
-            placeholderTextColor={colors.textDisabled}
-            autoCapitalize="none"
-            autoFocus
-          />
-          <Pressable onPress={saveInstagram} disabled={saving}>
-            <Text style={styles.saveLabel}>{saving ? "Saving…" : "Save"}</Text>
-          </Pressable>
-        </View>
-      ) : user.instagram_handle ? (
-        <Pressable
-          style={styles.instagramRow}
-          onPress={() => Linking.openURL(`https://instagram.com/${user.instagram_handle}`)}
-          onLongPress={() => setEditingInstagram(true)}
-        >
-          <MaterialCommunityIcons name="instagram" size={18} color={colors.accentEvolution} />
-          <Text style={styles.instagramLink}>@{user.instagram_handle}</Text>
+        <Pressable style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutLabel}>Log out</Text>
         </Pressable>
-      ) : (
-        <Pressable style={styles.instagramRow} onPress={() => setEditingInstagram(true)}>
-          <MaterialCommunityIcons name="instagram" size={18} color={colors.textSecondary} />
-          <Text style={styles.addInstagramLabel}>Add your Instagram</Text>
-        </Pressable>
-      )}
-
-      <Pressable style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutLabel}>Log out</Text>
-      </Pressable>
+      </View>
     </ScrollView>
   );
 }
@@ -342,8 +356,10 @@ export function ProfileScreen() {
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.statCard}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <View style={styles.statCardInner}>
+        <Text style={styles.statValue}>{value}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+      </View>
     </View>
   );
 }
@@ -351,13 +367,20 @@ function StatCard({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background },
-  content: { padding: spacing.md, paddingBottom: spacing.xl },
-  header: { alignItems: "center", marginTop: spacing.md, marginBottom: spacing.lg },
-  avatar: { width: 88, height: 88, borderRadius: 44 },
+  content: { paddingBottom: spacing.xl },
+  banner: { width: "100%" },
+  body: { paddingHorizontal: spacing.md },
+  // Pulls the avatar up so it straddles the banner/body boundary, "trainer
+  // card" style — everything below (name, joined date) stays in normal
+  // flow, so only the avatar itself overlaps.
+  header: { alignItems: "center", marginTop: -50, marginBottom: spacing.lg },
+  avatar: { width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: colors.surface },
   avatarFallback: {
     width: 88,
     height: 88,
     borderRadius: 44,
+    borderWidth: 3,
+    borderColor: colors.surface,
     backgroundColor: colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
@@ -400,10 +423,18 @@ const styles = StyleSheet.create({
     width: "50%",
     padding: spacing.xs,
   },
+  statCardInner: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.card,
+    padding: spacing.md,
+  },
   statValue: {
+    fontFamily: "monospace",
     fontSize: 22,
     fontWeight: "800",
-    color: colors.accentEvolution,
+    color: PROFILE_RED,
   },
   statLabel: {
     fontSize: 12,
@@ -443,7 +474,7 @@ const styles = StyleSheet.create({
   favoriteRestaurant: { fontSize: 13, color: colors.textSecondary },
   favoriteXpBarWrap: { marginTop: spacing.md },
   instagramRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  instagramLink: { fontSize: 15, color: colors.accentEvolution, fontWeight: "600" },
+  instagramLink: { fontSize: 15, color: PROFILE_RED, fontWeight: "600" },
   addInstagramLabel: { fontSize: 14, color: colors.textSecondary },
   instagramEditRow: { flexDirection: "row", alignItems: "center" },
   instagramAt: { fontSize: 15, color: colors.textSecondary, marginRight: 2 },
@@ -456,7 +487,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     marginRight: spacing.md,
   },
-  saveLabel: { fontSize: 14, fontWeight: "700", color: colors.accentEvolution },
+  saveLabel: { fontSize: 14, fontWeight: "700", color: PROFILE_RED },
   logoutButton: {
     marginTop: spacing.xl,
     alignSelf: "center",

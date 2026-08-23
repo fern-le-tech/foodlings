@@ -1,11 +1,20 @@
 import { useEffect, useState } from "react";
 import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator, Linking, Pressable } from "react-native";
 import { useRoute } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { supabase } from "@/lib/supabase";
 import { colors, spacing, radii } from "@/theme/colors";
 import { XPBar } from "@/components/XPBar";
 import type { User } from "@/types/database";
+
+// Matches ProfileScreen's trainer-card banner treatment for consistency —
+// this screen is reached from Leaderboard taps, so it should feel like the
+// same "kind" of screen, not a plainer cousin of it.
+const PROFILE_RED = "#D8342B";
+const PROFILE_RED_LIGHT = "#E8776D";
+const BANNER_HEIGHT = 120;
 
 interface ProgressRow {
   restaurant_id: string;
@@ -36,6 +45,7 @@ interface FavoriteCharacter {
  */
 export function PublicProfileScreen() {
   const route = useRoute<any>();
+  const insets = useSafeAreaInsets();
   const { userId } = route.params as { userId: string };
 
   const [loading, setLoading] = useState(true);
@@ -98,7 +108,7 @@ export function PublicProfileScreen() {
   if (loading || !user) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={colors.accentEvolution} />
+        <ActivityIndicator color={PROFILE_RED} />
       </View>
     );
   }
@@ -126,67 +136,74 @@ export function PublicProfileScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        {user.avatar_url ? (
-          <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatarFallback}>
-            <Text style={styles.avatarInitial}>{user.display_name.charAt(0).toUpperCase()}</Text>
-          </View>
-        )}
-        <Text style={styles.displayName}>{user.display_name}</Text>
-        <Text style={styles.joinedLabel}>Joined {joinedLabel}</Text>
-      </View>
+      <LinearGradient
+        colors={[PROFILE_RED, PROFILE_RED_LIGHT]}
+        style={[styles.banner, { height: insets.top + BANNER_HEIGHT }]}
+      />
 
-      <View style={styles.statsGrid}>
-        <StatCard label="Foodlings collected" value={`${collectedCount} / ${totalCharacters}`} />
-        <StatCard label="Regions visited" value={String(regionCount)} />
-        <StatCard label="Total XP (all-time)" value={totalXp.toLocaleString()} />
-        <StatCard label="Reward points (all-time)" value={totalPoints.toLocaleString()} />
-      </View>
-
-      <Text style={styles.sectionLabel}>Favorite Foodling</Text>
-      {favorite && favoriteChar ? (
-        <View style={styles.favoriteCard}>
-          <View style={styles.favoriteTopRow}>
-            {favoriteArt ? (
-              <Image source={{ uri: favoriteArt }} style={styles.favoriteArt} resizeMode="contain" />
-            ) : (
-              <View style={styles.favoriteArtPlaceholder} />
-            )}
-            <View style={styles.favoriteTextCol}>
-              <Text style={styles.favoriteName}>{favoriteName}</Text>
-              <Text style={styles.favoriteRestaurant}>{favorite.restaurants?.name}</Text>
-            </View>
-          </View>
-
-          {favoriteStage < 3 && (
-            <View style={styles.favoriteXpBarWrap}>
-              <XPBar
-                currentXp={favorite.current_xp}
-                currentStage={favoriteStage}
-                xpThresholdStage2={favoriteChar.xp_threshold_stage2}
-                xpThresholdStage3={favoriteChar.xp_threshold_stage3}
-              />
+      <View style={styles.body}>
+        <View style={styles.header}>
+          {user.avatar_url ? (
+            <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarFallback}>
+              <Text style={styles.avatarInitial}>{user.display_name.charAt(0).toUpperCase()}</Text>
             </View>
           )}
+          <Text style={styles.displayName}>{user.display_name}</Text>
+          <Text style={styles.joinedLabel}>Joined {joinedLabel}</Text>
         </View>
-      ) : (
-        <Text style={styles.emptyText}>No check-ins yet.</Text>
-      )}
 
-      {user.instagram_handle && (
-        <>
-          <Text style={styles.sectionLabel}>Instagram</Text>
-          <Pressable
-            style={styles.instagramRow}
-            onPress={() => Linking.openURL(`https://instagram.com/${user.instagram_handle}`)}
-          >
-            <MaterialCommunityIcons name="instagram" size={18} color={colors.accentEvolution} />
-            <Text style={styles.instagramLink}>@{user.instagram_handle}</Text>
-          </Pressable>
-        </>
-      )}
+        <View style={styles.statsGrid}>
+          <StatCard label="Foodlings collected" value={`${collectedCount} / ${totalCharacters}`} />
+          <StatCard label="Regions visited" value={String(regionCount)} />
+          <StatCard label="Total XP (all-time)" value={totalXp.toLocaleString()} />
+          <StatCard label="Reward points (all-time)" value={totalPoints.toLocaleString()} />
+        </View>
+
+        <Text style={styles.sectionLabel}>Favorite Foodling</Text>
+        {favorite && favoriteChar ? (
+          <View style={styles.favoriteCard}>
+            <View style={styles.favoriteTopRow}>
+              {favoriteArt ? (
+                <Image source={{ uri: favoriteArt }} style={styles.favoriteArt} resizeMode="contain" />
+              ) : (
+                <View style={styles.favoriteArtPlaceholder} />
+              )}
+              <View style={styles.favoriteTextCol}>
+                <Text style={styles.favoriteName}>{favoriteName}</Text>
+                <Text style={styles.favoriteRestaurant}>{favorite.restaurants?.name}</Text>
+              </View>
+            </View>
+
+            {favoriteStage < 3 && (
+              <View style={styles.favoriteXpBarWrap}>
+                <XPBar
+                  currentXp={favorite.current_xp}
+                  currentStage={favoriteStage}
+                  xpThresholdStage2={favoriteChar.xp_threshold_stage2}
+                  xpThresholdStage3={favoriteChar.xp_threshold_stage3}
+                />
+              </View>
+            )}
+          </View>
+        ) : (
+          <Text style={styles.emptyText}>No check-ins yet.</Text>
+        )}
+
+        {user.instagram_handle && (
+          <>
+            <Text style={styles.sectionLabel}>Instagram</Text>
+            <Pressable
+              style={styles.instagramRow}
+              onPress={() => Linking.openURL(`https://instagram.com/${user.instagram_handle}`)}
+            >
+              <MaterialCommunityIcons name="instagram" size={18} color={PROFILE_RED} />
+              <Text style={styles.instagramLink}>@{user.instagram_handle}</Text>
+            </Pressable>
+          </>
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -194,8 +211,10 @@ export function PublicProfileScreen() {
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.statCard}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <View style={styles.statCardInner}>
+        <Text style={styles.statValue}>{value}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+      </View>
     </View>
   );
 }
@@ -203,13 +222,17 @@ function StatCard({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background },
-  content: { padding: spacing.md, paddingBottom: spacing.xl },
-  header: { alignItems: "center", marginTop: spacing.md, marginBottom: spacing.lg },
-  avatar: { width: 88, height: 88, borderRadius: 44 },
+  content: { paddingBottom: spacing.xl },
+  banner: { width: "100%" },
+  body: { paddingHorizontal: spacing.md },
+  header: { alignItems: "center", marginTop: -50, marginBottom: spacing.lg },
+  avatar: { width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: colors.surface },
   avatarFallback: {
     width: 88,
     height: 88,
     borderRadius: 44,
+    borderWidth: 3,
+    borderColor: colors.surface,
     backgroundColor: colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
@@ -226,10 +249,18 @@ const styles = StyleSheet.create({
     width: "50%",
     padding: spacing.xs,
   },
+  statCardInner: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.card,
+    padding: spacing.md,
+  },
   statValue: {
+    fontFamily: "monospace",
     fontSize: 22,
     fontWeight: "800",
-    color: colors.accentEvolution,
+    color: PROFILE_RED,
   },
   statLabel: {
     fontSize: 12,
@@ -269,5 +300,5 @@ const styles = StyleSheet.create({
   favoriteRestaurant: { fontSize: 13, color: colors.textSecondary },
   favoriteXpBarWrap: { marginTop: spacing.md },
   instagramRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  instagramLink: { fontSize: 15, color: colors.accentEvolution, fontWeight: "600" },
+  instagramLink: { fontSize: 15, color: PROFILE_RED, fontWeight: "600" },
 });

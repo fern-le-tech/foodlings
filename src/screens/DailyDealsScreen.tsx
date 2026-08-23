@@ -14,9 +14,19 @@ import {
   NativeScrollEvent,
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { supabase } from "@/lib/supabase";
 import { colors, spacing, radii } from "@/theme/colors";
+
+// Same red used on Directory/Leaderboard/Collection — the header-panel
+// treatment is deliberately reused as-is so these screens read as one
+// family. The deal cards themselves stay white/cream (not red) since
+// they're showing real food photography, which reads as more appetizing
+// against a neutral backdrop than a saturated color field.
+const HOME_RED = "#D8342B";
+const HOME_RED_LIGHT = "#E8776D";
 
 interface DealRow {
   id: string;
@@ -44,6 +54,7 @@ const CARD_SIDE_PADDING = spacing.lg;
 
 export function DailyDealsScreen() {
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const cardWidth = width - CARD_SIDE_PADDING * 2;
   const imageHeight = height * 0.28; // ~1/3 of screen, not half
@@ -124,14 +135,20 @@ export function DailyDealsScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.accentEvolution} />
+        <ActivityIndicator size="large" color={HOME_RED} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <LinearGradient
+        colors={[HOME_RED, HOME_RED_LIGHT]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.header, { paddingTop: insets.top + spacing.sm }]}
+      >
+        <Text style={styles.eyebrow}>HOME</Text>
         <Text style={styles.headerTitle}>Today's Deals</Text>
         <Text style={styles.headerSubtitle}>Swipe through fresh offers, live right now</Text>
 
@@ -151,6 +168,12 @@ export function DailyDealsScreen() {
             </Text>
           </Pressable>
         </View>
+      </LinearGradient>
+
+      <View style={styles.perforationRow}>
+        <View style={styles.perforationNotchLeft} />
+        <View style={styles.perforationLine} />
+        <View style={styles.perforationNotchRight} />
       </View>
 
       {visibleDeals.length === 0 ? (
@@ -314,36 +337,65 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
   header: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.lg,
   },
-  headerTitle: { fontSize: 26, fontWeight: "800", color: colors.textPrimary },
-  headerSubtitle: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+    color: "rgba(255,255,255,0.85)",
+    marginBottom: 4,
+  },
+  headerTitle: { fontSize: 26, fontWeight: "800", color: "#FFFFFF" },
+  headerSubtitle: { fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 2 },
   toggleRow: {
     flexDirection: "row",
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radii.pill,
-    padding: 4,
     marginTop: spacing.md,
     alignSelf: "flex-start",
   },
   toggleButton: {
-    paddingVertical: 6,
+    paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
     borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.5)",
+    marginRight: spacing.sm,
   },
   toggleButtonActive: {
-    backgroundColor: colors.surface,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 1,
+    backgroundColor: "#FFFFFF",
+    borderColor: "#FFFFFF",
   },
-  toggleLabel: { fontSize: 13, fontWeight: "600", color: colors.textSecondary },
-  toggleLabelActive: { color: colors.textPrimary },
+  toggleLabel: { fontSize: 13, fontWeight: "600", color: "#FFFFFF" },
+  toggleLabelActive: { color: HOME_RED },
 
-  carouselContent: { alignItems: "center" },
+  perforationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.background,
+  },
+  perforationNotchLeft: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.background,
+    marginLeft: -8,
+  },
+  perforationNotchRight: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.background,
+    marginRight: -8,
+  },
+  perforationLine: {
+    flex: 1,
+    borderTopWidth: 2,
+    borderStyle: "dashed",
+    borderColor: colors.border,
+    marginHorizontal: spacing.xs,
+  },
+
+  carouselContent: { alignItems: "center", paddingTop: spacing.md },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radii.card,
