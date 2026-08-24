@@ -40,6 +40,8 @@ export type Restaurant = {
   created_at: string;
   banner_url: string | null;
   bio: string | null;
+  instagram_handle: string | null;
+  facebook_handle: string | null;
 };
 
 export type FoodlingCharacter = {

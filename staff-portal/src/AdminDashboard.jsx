@@ -186,6 +186,8 @@ const emptyPartnerForm = {
   signature_dish: "",
   banner_url: "",
   bio: "",
+  instagram_handle: "",
+  facebook_handle: "",
   partner_status: "active",
   name_stage1: "",
   art_url_stage1: "",
@@ -225,6 +227,8 @@ function NewPartnerPanel({ onCreated }) {
         signature_dish: form.signature_dish || null,
         banner_url: form.banner_url || null,
         bio: form.bio || null,
+        instagram_handle: form.instagram_handle || null,
+        facebook_handle: form.facebook_handle || null,
         partner_status: form.partner_status,
       })
       .select()
@@ -292,6 +296,16 @@ function NewPartnerPanel({ onCreated }) {
         value={form.bio}
         onChange={set("bio")}
         rows={3}
+      />
+      <input
+        placeholder="Instagram handle (without @)"
+        value={form.instagram_handle}
+        onChange={set("instagram_handle")}
+      />
+      <input
+        placeholder="Facebook handle (without @)"
+        value={form.facebook_handle}
+        onChange={set("facebook_handle")}
       />
       <select value={form.partner_status} onChange={set("partner_status")}>
         <option value="active">active</option>
@@ -452,6 +466,8 @@ function PartnerEditForm({ restaurant, character, onSaved }) {
     cuisine_type: restaurant.cuisine_type ?? "",
     signature_dish: restaurant.signature_dish ?? "",
     banner_url: restaurant.banner_url ?? "",
+    instagram_handle: restaurant.instagram_handle ?? "",
+    facebook_handle: restaurant.facebook_handle ?? "",
     partner_status: restaurant.partner_status ?? "active",
     name_stage1: character?.name_stage1 ?? "",
     art_url_stage1: character?.art_url_stage1 ?? "",
@@ -482,6 +498,8 @@ function PartnerEditForm({ restaurant, character, onSaved }) {
         cuisine_type: form.cuisine_type || null,
         signature_dish: form.signature_dish || null,
         banner_url: form.banner_url || null,
+        instagram_handle: form.instagram_handle || null,
+        facebook_handle: form.facebook_handle || null,
         partner_status: form.partner_status,
       })
       .eq("id", restaurant.id);
@@ -544,6 +562,16 @@ function PartnerEditForm({ restaurant, character, onSaved }) {
         placeholder="Banner photo URL (shown on Home > Restaurants Near You)"
         value={form.banner_url}
         onChange={set("banner_url")}
+      />
+      <input
+        placeholder="Instagram handle (without @)"
+        value={form.instagram_handle}
+        onChange={set("instagram_handle")}
+      />
+      <input
+        placeholder="Facebook handle (without @)"
+        value={form.facebook_handle}
+        onChange={set("facebook_handle")}
       />
       <select value={form.partner_status} onChange={set("partner_status")}>
         <option value="active">active</option>

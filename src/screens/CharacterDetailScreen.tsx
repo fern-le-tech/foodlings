@@ -585,6 +585,27 @@ export function CharacterDetailScreen() {
 
               {restaurant.bio && <Text style={styles.bioText}>{restaurant.bio}</Text>}
 
+              {(restaurant.instagram_handle || restaurant.facebook_handle) && (
+                <View style={styles.socialRow}>
+                  {restaurant.instagram_handle && (
+                    <Pressable
+                      style={styles.socialIcon}
+                      onPress={() => Linking.openURL(`https://instagram.com/${restaurant.instagram_handle}`)}
+                    >
+                      <MaterialCommunityIcons name="instagram" size={20} color={ACCENT_RED} />
+                    </Pressable>
+                  )}
+                  {restaurant.facebook_handle && (
+                    <Pressable
+                      style={styles.socialIcon}
+                      onPress={() => Linking.openURL(`https://facebook.com/${restaurant.facebook_handle}`)}
+                    >
+                      <MaterialCommunityIcons name="facebook" size={20} color={ACCENT_RED} />
+                    </Pressable>
+                  )}
+                </View>
+              )}
+
               {activeDeal && (
                 <>
                   <Text style={styles.sectionLabel}>Today's Deal</Text>
@@ -990,7 +1011,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
     color: colors.textPrimary,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  socialRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  socialIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
   },
   rewardsBlock: { marginTop: spacing.md },
   sectionLabel: {
