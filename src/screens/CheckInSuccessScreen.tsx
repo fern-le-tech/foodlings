@@ -24,9 +24,9 @@ export function CheckInSuccessScreen() {
       <Animated.View style={[styles.card, { transform: [{ scale }] }]}>
         {result.rate_limited ? (
           <>
-            <Text style={styles.rateLimitTitle}>Check-in logged</Text>
+            <Text style={styles.rateLimitTitle}>Already scanned</Text>
             <Text style={styles.rateLimitBody}>
-              You already checked in at {result.restaurantName} recently — xp and points will
+              You already scanned in at {result.restaurantName} recently — xp and points will
               count again after the 4-hour window.
             </Text>
           </>

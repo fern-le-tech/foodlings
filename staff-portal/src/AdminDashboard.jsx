@@ -184,6 +184,8 @@ const emptyPartnerForm = {
   address: "",
   cuisine_type: "",
   signature_dish: "",
+  banner_url: "",
+  bio: "",
   partner_status: "active",
   name_stage1: "",
   art_url_stage1: "",
@@ -221,6 +223,8 @@ function NewPartnerPanel({ onCreated }) {
         address: form.address || null,
         cuisine_type: form.cuisine_type || null,
         signature_dish: form.signature_dish || null,
+        banner_url: form.banner_url || null,
+        bio: form.bio || null,
         partner_status: form.partner_status,
       })
       .select()
@@ -277,6 +281,17 @@ function NewPartnerPanel({ onCreated }) {
         placeholder="Signature dish"
         value={form.signature_dish}
         onChange={set("signature_dish")}
+      />
+      <input
+        placeholder="Banner photo URL (shown on Home > Restaurants Near You)"
+        value={form.banner_url}
+        onChange={set("banner_url")}
+      />
+      <textarea
+        placeholder="Bio (shown on the character page's About tab, e.g. 'A vibrant Mexican restaurant in RiNo known for its tacos and margaritas.')"
+        value={form.bio}
+        onChange={set("bio")}
+        rows={3}
       />
       <select value={form.partner_status} onChange={set("partner_status")}>
         <option value="active">active</option>
@@ -436,6 +451,7 @@ function PartnerEditForm({ restaurant, character, onSaved }) {
     address: restaurant.address ?? "",
     cuisine_type: restaurant.cuisine_type ?? "",
     signature_dish: restaurant.signature_dish ?? "",
+    banner_url: restaurant.banner_url ?? "",
     partner_status: restaurant.partner_status ?? "active",
     name_stage1: character?.name_stage1 ?? "",
     art_url_stage1: character?.art_url_stage1 ?? "",
@@ -465,6 +481,7 @@ function PartnerEditForm({ restaurant, character, onSaved }) {
         address: form.address || null,
         cuisine_type: form.cuisine_type || null,
         signature_dish: form.signature_dish || null,
+        banner_url: form.banner_url || null,
         partner_status: form.partner_status,
       })
       .eq("id", restaurant.id);
@@ -522,6 +539,11 @@ function PartnerEditForm({ restaurant, character, onSaved }) {
         placeholder="Signature dish"
         value={form.signature_dish}
         onChange={set("signature_dish")}
+      />
+      <input
+        placeholder="Banner photo URL (shown on Home > Restaurants Near You)"
+        value={form.banner_url}
+        onChange={set("banner_url")}
       />
       <select value={form.partner_status} onChange={set("partner_status")}>
         <option value="active">active</option>

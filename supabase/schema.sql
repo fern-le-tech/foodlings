@@ -64,7 +64,8 @@ create table public.restaurants (
   signature_dish text,
   partner_status text not null default 'active'
     check (partner_status in ('active', 'paused', 'onboarding', 'churned')),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  banner_url text
 );
 
 alter table public.staff
@@ -134,7 +135,8 @@ create table public.redeemable_rewards (
   title text not null,
   points_cost int not null check (points_cost > 0),
   active boolean not null default true,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  photo_url text
 );
 
 create table public.redemptions (

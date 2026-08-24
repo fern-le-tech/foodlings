@@ -221,6 +221,16 @@ h1, h2, h3 {
   margin: 28px 0 12px;
 }
 
+/* A section title that should read as prominently as the card's own h2
+   (e.g. "Add New Reward") rather than the muted uppercase label style
+   most .card h3s use. */
+.card h3.section-title {
+  color: var(--text-primary);
+  text-transform: none;
+  letter-spacing: -0.01em;
+  font-size: 17px;
+}
+
 /* ==========================================================================
    Forms & inputs
    ========================================================================== */
@@ -477,6 +487,76 @@ button:disabled {
 .deal-photo-preview {
   width: 100%;
   height: 240px;
+  object-fit: cover;
+  display: block;
+}
+
+/* ==========================================================================
+   Rewards
+   ========================================================================== */
+.reward-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.reward-photo-picker {
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.reward-photo-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px dashed var(--border);
+  background: var(--surface-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease;
+}
+
+.reward-photo-picker:hover .reward-photo-circle {
+  border-color: var(--accent);
+}
+
+.reward-photo-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.reward-photo-placeholder-text {
+  font-size: 22px;
+  opacity: 0.6;
+}
+
+.reward-photo-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.reward-list-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--surface-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+
+.reward-list-thumb img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   display: block;
 }

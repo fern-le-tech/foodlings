@@ -10,10 +10,11 @@ import {
   RefreshControl,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { supabase } from "@/lib/supabase";
-import { colors, spacing, radii, TAB_BAR_CLEARANCE } from "@/theme/colors";
+import { colors, spacing, radii } from "@/theme/colors";
+import { useTabBarClearance } from "@/hooks/useTabBarClearance";
+import { getCurrentBadge, getTierColor, TIER_GOLD, TIER_SILVER, TIER_BRONZE } from "@/constants/badges";
 import type { LeaderboardRow } from "@/types/database";
 
 type SortMode = "collection_size" | "total_xp";
@@ -22,31 +23,33 @@ type SortMode = "collection_size" | "total_xp";
 // (gradient + eyebrow + perforation divider) is deliberately reused as-is
 // so these screens read as one family rather than each inventing its own.
 const BOARD_RED = "#D8342B";
-const BOARD_RED_LIGHT = "#E8776D";
-const BOARD_RED_SOFT = "#FBE4E1";
 
-// One unified list rather than a separate podium block for the top 3 —
-// a literal gold/silver/bronze podium is a pattern borrowed from generic
-// sports-app templates and clashed with the app's own device-readout
-// language elsewhere. Top ranks taper off using Foodlings' own red accent
-// and monospace numerals instead: rank 1 gets a full tinted card, ranks
-// 2-3 get progressively smaller call-outs, rank 4+ is the plain row.
+// Every row card is the same plain shape — the top 3 stand out through
+// their ordinal number instead: solid gold/silver/bronze medal pills with
+// bold white numerals, matching the real medal convention (and reusing the
+// exact tier colors from the personal rank badges elsewhere in the app).
+function ordinal(n: number): string {
+  const suffixes = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return `${n}${suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0]}`;
+}
+
 function rankAccent(rank: number) {
   if (rank === 1) {
-    return { card: styles.rowRank1, avatar: 44, rankSize: 22, rankColor: BOARD_RED };
+    return { medal: TIER_GOLD, avatar: 44, rankSize: 18 };
   }
   if (rank === 2) {
-    return { card: styles.rowRank2, avatar: 38, rankSize: 18, rankColor: BOARD_RED };
+    return { medal: TIER_SILVER, avatar: 38, rankSize: 16 };
   }
   if (rank === 3) {
-    return { card: styles.rowRank3, avatar: 34, rankSize: 16, rankColor: BOARD_RED };
+    return { medal: TIER_BRONZE, avatar: 34, rankSize: 15 };
   }
-  return { card: null, avatar: 32, rankSize: 14, rankColor: colors.textSecondary };
+  return { medal: null, avatar: 32, rankSize: 14 };
 }
 
 export function LeaderboardScreen() {
   const navigation = useNavigation<any>();
-  const insets = useSafeAreaInsets();
+  const tabBarClearance = useTabBarClearance();
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
   const [sortMode, setSortMode] = useState<SortMode>("collection_size");
   const [loading, setLoading] = useState(true);
@@ -79,40 +82,25 @@ export function LeaderboardScreen() {
 
   return (
     <View style={styles.screen}>
-      <LinearGradient
-        colors={[BOARD_RED, BOARD_RED_LIGHT]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.headerPanel, { paddingTop: insets.top + spacing.sm }]}
-      >
-        <Text style={styles.eyebrow}>LEADERBOARD</Text>
-        <Text style={styles.title}>Friends ranking</Text>
-        <View style={styles.toggleRow}>
-          <Pressable
-            style={[styles.toggleButton, sortMode === "collection_size" && styles.toggleButtonActive]}
-            onPress={() => setSortMode("collection_size")}
+      <View style={styles.toggleRow}>
+        <Pressable
+          style={[styles.toggleButton, sortMode === "collection_size" && styles.toggleButtonActive]}
+          onPress={() => setSortMode("collection_size")}
+        >
+          <Text
+            style={[styles.toggleLabel, sortMode === "collection_size" && styles.toggleLabelActive]}
           >
-            <Text
-              style={[styles.toggleLabel, sortMode === "collection_size" && styles.toggleLabelActive]}
-            >
-              Collection
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.toggleButton, sortMode === "total_xp" && styles.toggleButtonActive]}
-            onPress={() => setSortMode("total_xp")}
-          >
-            <Text style={[styles.toggleLabel, sortMode === "total_xp" && styles.toggleLabelActive]}>
-              Total XP
-            </Text>
-          </Pressable>
-        </View>
-      </LinearGradient>
-
-      <View style={styles.perforationRow}>
-        <View style={styles.perforationNotchLeft} />
-        <View style={styles.perforationLine} />
-        <View style={styles.perforationNotchRight} />
+            Collection
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[styles.toggleButton, sortMode === "total_xp" && styles.toggleButtonActive]}
+          onPress={() => setSortMode("total_xp")}
+        >
+          <Text style={[styles.toggleLabel, sortMode === "total_xp" && styles.toggleLabelActive]}>
+            Total XP
+          </Text>
+        </Pressable>
       </View>
 
       {loading ? (
@@ -126,21 +114,40 @@ export function LeaderboardScreen() {
         <FlatList
           data={rows}
           keyExtractor={(item) => item.user_id}
-          contentContainerStyle={{ padding: spacing.md, paddingTop: spacing.sm, paddingBottom: TAB_BAR_CLEARANCE }}
+          contentContainerStyle={{ padding: spacing.md, paddingTop: spacing.sm, paddingBottom: tabBarClearance }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={BOARD_RED} />
+          }
+          ListHeaderComponent={
+            // States each column's unit once for the whole list instead of
+            // repeating it on every row — reads as a table header, and stays
+            // legible no matter how many rows are in the list.
+            <View style={styles.columnHeaderRow}>
+              <Text style={[styles.columnHeader, styles.rankCol]}>Rank</Text>
+              <Text style={[styles.columnHeader, styles.valueCol]}>
+                {sortMode === "collection_size" ? "Foodlings" : "XP"}
+              </Text>
+            </View>
           }
           renderItem={({ item, index }) => {
             const rank = index + 1;
             const accent = rankAccent(rank);
+            const badge = getCurrentBadge(item.collection_size);
+            const badgeColor = getTierColor(badge?.threshold);
             return (
               <Pressable
-                style={[styles.row, accent.card]}
+                style={styles.row}
                 onPress={() => navigation.navigate("PublicProfile", { userId: item.user_id })}
               >
-                <Text style={[styles.rank, { fontSize: accent.rankSize, color: accent.rankColor }]}>
-                  {rank}
-                </Text>
+                {accent.medal ? (
+                  <View style={[styles.rankMedal, { backgroundColor: accent.medal }]}>
+                    <Text style={[styles.rankMedalLabel, { fontSize: accent.rankSize }]}>
+                      {ordinal(rank)}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={[styles.rank, { fontSize: accent.rankSize }]}>{ordinal(rank)}</Text>
+                )}
                 {item.avatar_url ? (
                   <Image
                     source={{ uri: item.avatar_url }}
@@ -156,8 +163,19 @@ export function LeaderboardScreen() {
                     <Text style={styles.avatarInitial}>{item.display_name.charAt(0).toUpperCase()}</Text>
                   </View>
                 )}
-                <Text style={styles.name}>{item.display_name}</Text>
-                <Text style={styles.value}>{valueFor(item)}</Text>
+                <View style={styles.nameRow}>
+                  <Text style={styles.name} numberOfLines={1}>
+                    {item.display_name}
+                  </Text>
+                </View>
+                <View style={styles.rankCol}>
+                  {badge && (
+                    <View style={[styles.rankIcon, { borderColor: badgeColor }]}>
+                      <MaterialCommunityIcons name={badge.icon} size={16} color={badgeColor} />
+                    </View>
+                  )}
+                </View>
+                <Text style={[styles.value, styles.valueCol]}>{valueFor(item)}</Text>
               </Pressable>
             );
           }}
@@ -169,56 +187,24 @@ export function LeaderboardScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  headerPanel: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.lg,
+  toggleRow: {
+    flexDirection: "row",
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
   },
-  eyebrow: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.5,
-    color: "rgba(255,255,255,0.85)",
-    marginBottom: 4,
-  },
-  title: { fontSize: 26, fontWeight: "800", color: "#FFFFFF" },
-  toggleRow: { flexDirection: "row", marginTop: spacing.md },
   toggleButton: {
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.5)",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     marginRight: spacing.sm,
   },
-  toggleButtonActive: { backgroundColor: "#FFFFFF", borderColor: "#FFFFFF" },
-  toggleLabel: { color: "#FFFFFF", fontWeight: "600", fontSize: 13 },
-  toggleLabelActive: { color: BOARD_RED },
-  perforationRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.background,
-  },
-  perforationNotchLeft: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: colors.background,
-    marginLeft: -8,
-  },
-  perforationNotchRight: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: colors.background,
-    marginRight: -8,
-  },
-  perforationLine: {
-    flex: 1,
-    borderTopWidth: 2,
-    borderStyle: "dashed",
-    borderColor: colors.border,
-    marginHorizontal: spacing.xs,
-  },
+  toggleButtonActive: { backgroundColor: BOARD_RED, borderColor: BOARD_RED },
+  toggleLabel: { color: colors.textSecondary, fontWeight: "600", fontSize: 13 },
+  toggleLabelActive: { color: "#FFFFFF" },
   emptyText: {
     padding: spacing.lg,
     fontSize: 14,
@@ -237,26 +223,23 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
-  // Tapering emphasis for the top 3 — full tint + thick border for #1,
-  // white card with a red border for #2, white card with just a red
-  // border-left accent for #3, plain for everyone else.
-  rowRank1: {
-    backgroundColor: BOARD_RED_SOFT,
-    borderColor: BOARD_RED,
-    borderWidth: 1.5,
-  },
-  rowRank2: {
-    borderColor: BOARD_RED,
-    borderWidth: 1.5,
-  },
-  rowRank3: {
-    borderLeftColor: BOARD_RED,
-    borderLeftWidth: 3,
-  },
   rank: {
-    width: 32,
+    width: 44,
     fontFamily: "monospace",
     fontWeight: "800",
+    color: colors.textSecondary,
+  },
+  rankMedal: {
+    width: 44,
+    height: 32,
+    borderRadius: radii.pill,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rankMedalLabel: {
+    fontFamily: "monospace",
+    fontWeight: "800",
+    color: "#FFFFFF",
   },
   avatar: { marginRight: spacing.sm },
   avatarFallback: {
@@ -266,6 +249,46 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   avatarInitial: { fontSize: 14, fontWeight: "700", color: colors.textPrimary },
-  name: { flex: 1, fontWeight: "600", color: colors.textPrimary },
-  value: { fontFamily: "monospace", fontWeight: "700", color: BOARD_RED },
+  nameRow: { flex: 1, flexDirection: "row", alignItems: "center" },
+  name: { flexShrink: 1, fontWeight: "600", color: colors.textPrimary },
+  rankCol: { width: 44, alignItems: "center", justifyContent: "center" },
+  rankIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  value: {
+    fontFamily: "monospace",
+    fontWeight: "700",
+    fontSize: 16,
+    color: BOARD_RED,
+    marginLeft: spacing.sm,
+  },
+  // Fixed width so the "Foodlings"/"XP" header label and each row's short
+  // number both anchor to the same right edge — otherwise the differing
+  // text widths shift the Rank column between the header and the rows.
+  valueCol: { width: 72, textAlign: "right" },
+  columnHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+    // Row cards below have their own internal padding on top of the list's
+    // outer padding — matching it here keeps the header's right edge lined
+    // up with the rank icon/value inside each card instead of sitting
+    // further right than them.
+    paddingRight: spacing.md,
+  },
+  columnHeader: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    textAlign: "center",
+  },
 });

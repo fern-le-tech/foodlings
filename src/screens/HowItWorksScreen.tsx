@@ -42,7 +42,7 @@ const SLIDES: Slide[] = [
   {
     key: "checkin",
     icon: "qrcode-scan",
-    title: "Check in at restaurants",
+    title: "Scan to earn at restaurants",
     body:
       "Scan the QR code at any partner restaurant when you dine in. Every dollar you spend earns you 1 XP and 1 reward point at that restaurant.",
   },
@@ -51,7 +51,7 @@ const SLIDES: Slide[] = [
     evolutionArt: EVOLUTION_EXAMPLE_ART,
     title: "Watch your character evolve",
     body:
-      "Each restaurant has its own collectible character. Keep checking in and it evolves through three stages as your XP there grows — from a first form all the way to its final evolution.",
+      "Each restaurant has its own collectible character. Keep scanning in and it evolves through three stages as your XP there grows — from a first form all the way to its final evolution.",
   },
   {
     key: "redeem",
@@ -65,7 +65,7 @@ const SLIDES: Slide[] = [
     icon: "cards",
     title: "Collect all of Denver",
     body:
-      "Leave reviews, invite friends, and check in at new spots to grow your collection. Climb the leaderboard as you become a true Foodlings trainer.",
+      "Leave reviews, invite friends, and scan in at new spots to grow your collection. Climb the leaderboard as you become a true Foodlings trainer.",
   },
 ];
 

@@ -12,7 +12,10 @@ interface Props {
   children?: React.ReactNode;
 }
 
-const RING_RED = "#D8342B";
+// Same gold as the evolution timeline's "reached" boxes and the XP caption
+// text — one consistent accent for progress/achievement, leaving red for
+// locked states and the page's own brand chrome instead.
+const RING_GOLD = "#E3A008";
 const DEFAULT_SIZE = 64;
 
 /**
@@ -35,14 +38,17 @@ export function XPBar({
 }: Props) {
   const isMaxed = currentStage >= 3;
 
-  const base = currentStage === 1 ? 0 : xpThresholdStage2;
+  // Absolute progress toward the next threshold, not "XP earned since
+  // entering this stage" — matches how the caption below the ring reads
+  // ("550 / 1000 xp"). Staying stage-relative could clamp to a visually
+  // empty ring right after evolving, if current_xp hadn't yet caught up
+  // past the new stage's own threshold.
   const goal = currentStage === 1 ? xpThresholdStage2 : xpThresholdStage3;
-  const pct = isMaxed ? 1 : Math.max(0, Math.min(1, (currentXp - base) / (goal - base)));
+  const pct = isMaxed ? 1 : Math.max(0, Math.min(1, currentXp / goal));
 
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const center = size / 2;
-  const ringColor = isMaxed ? colors.accentReward : RING_RED;
 
   return (
     <View style={[styles.wrap, { width: size, height: size }]}>
@@ -61,7 +67,7 @@ export function XPBar({
           cx={center}
           cy={center}
           r={radius}
-          stroke={ringColor}
+          stroke={RING_GOLD}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           fill="none"

@@ -19,6 +19,17 @@ export function StaffRewardsManager({ session }) {
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  // Photo state is separate from `form`: photoFile is a newly-picked file
+  // pending upload, photoPreviewUrl is what to show (either that file's
+  // local preview or an existing reward's already-uploaded photo), and
+  // photoRemoved distinguishes "leave the existing photo alone" (editing,
+  // untouched) from "explicitly clear it" (editing, removed) — both look
+  // like "no photoFile" otherwise.
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState(null);
+  const [photoRemoved, setPhotoRemoved] = useState(false);
 
   // Reward-code scanning
   const [scanning, setScanning] = useState(false);
@@ -121,6 +132,9 @@ export function StaffRewardsManager({ session }) {
     setForm(emptyForm);
     setEditingId(null);
     setError(null);
+    setPhotoFile(null);
+    setPhotoPreviewUrl(null);
+    setPhotoRemoved(false);
   };
 
   const startEdit = (reward) => {
@@ -131,6 +145,23 @@ export function StaffRewardsManager({ session }) {
     });
     setEditingId(reward.id);
     setError(null);
+    setPhotoFile(null);
+    setPhotoPreviewUrl(reward.photo_url ?? null);
+    setPhotoRemoved(false);
+  };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreviewUrl(URL.createObjectURL(file));
+    setPhotoRemoved(false);
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreviewUrl(null);
+    setPhotoRemoved(true);
   };
 
   const handleSubmit = async (e) => {
@@ -150,25 +181,49 @@ export function StaffRewardsManager({ session }) {
     setBusy(true);
     setError(null);
 
-    if (editingId) {
-      const { error } = await supabase
-        .from("redeemable_rewards")
-        .update({ title: form.title.trim(), points_cost: cost, active: form.active })
-        .eq("id", editingId);
-      if (error) setError(error.message);
-    } else {
-      const { error } = await supabase.from("redeemable_rewards").insert({
-        restaurant_id: staffRow.restaurant_id,
+    try {
+      let photoUrl;
+      if (photoFile) {
+        setUploadingPhoto(true);
+        const ext = photoFile.name.split(".").pop() || "jpg";
+        const path = `${staffRow.restaurant_id}/${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("reward-photos")
+          .upload(path, photoFile, { contentType: photoFile.type || "image/jpeg" });
+        if (uploadError) throw uploadError;
+        const { data: publicUrlData } = supabase.storage.from("reward-photos").getPublicUrl(path);
+        photoUrl = publicUrlData.publicUrl;
+        setUploadingPhoto(false);
+      } else if (photoRemoved) {
+        photoUrl = null;
+      }
+      // else: leave whatever photo_url the row already has untouched
+
+      const payload = {
         title: form.title.trim(),
         points_cost: cost,
         active: form.active,
-      });
-      if (error) setError(error.message);
-    }
+        ...(photoUrl !== undefined ? { photo_url: photoUrl } : {}),
+      };
 
-    if (staffRow) await loadRewards(staffRow.restaurant_id);
-    setBusy(false);
-    if (!error) resetForm();
+      if (editingId) {
+        const { error } = await supabase.from("redeemable_rewards").update(payload).eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("redeemable_rewards")
+          .insert({ restaurant_id: staffRow.restaurant_id, ...payload });
+        if (error) throw error;
+      }
+
+      if (staffRow) await loadRewards(staffRow.restaurant_id);
+      resetForm();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploadingPhoto(false);
+      setBusy(false);
+    }
   };
 
   const toggleActive = async (reward) => {
@@ -231,6 +286,7 @@ export function StaffRewardsManager({ session }) {
       <hr className="section-divider" />
 
       {/* Add / edit rewards */}
+      <h3 className="section-title">{editingId ? "Edit Reward" : "Add New Reward"}</h3>
       <form onSubmit={handleSubmit} className="admin-form">
         <input
           type="text"
@@ -248,6 +304,26 @@ export function StaffRewardsManager({ session }) {
           onChange={(e) => setForm((f) => ({ ...f, points_cost: e.target.value }))}
           required
         />
+        <div className="reward-photo-row">
+          <label className="reward-photo-picker">
+            <div className="reward-photo-circle">
+              {photoPreviewUrl ? (
+                <img src={photoPreviewUrl} alt="Reward preview" className="reward-photo-preview" />
+              ) : (
+                <span className="reward-photo-placeholder-text">📷</span>
+              )}
+            </div>
+            <input type="file" accept="image/*" onChange={handlePhotoChange} hidden />
+          </label>
+          <div className="reward-photo-hint">
+            <span className="hint-text">Photo (optional) — shown as a small icon next to the reward</span>
+            {photoPreviewUrl && (
+              <button type="button" className="link-button" onClick={removePhoto}>
+                Remove photo
+              </button>
+            )}
+          </div>
+        </div>
         <label className="checkbox-row">
           <input
             type="checkbox"
@@ -258,7 +334,7 @@ export function StaffRewardsManager({ session }) {
         </label>
         <div className="button-row">
           <button type="submit" disabled={busy}>
-            {editingId ? "Save changes" : "Add reward"}
+            {uploadingPhoto ? "Uploading photo…" : busy ? "Saving…" : editingId ? "Save changes" : "Add reward"}
           </button>
           {editingId && (
             <button type="button" className="link-button" onClick={resetForm}>
@@ -276,6 +352,13 @@ export function StaffRewardsManager({ session }) {
         ) : (
           rewards.map((reward) => (
             <div key={reward.id} className="admin-list-row">
+              <div className="reward-list-thumb">
+                {reward.photo_url ? (
+                  <img src={reward.photo_url} alt="" />
+                ) : (
+                  <span className="reward-photo-placeholder-text">📷</span>
+                )}
+              </div>
               <div className="admin-list-row-col">
                 <strong>{reward.title}</strong>
                 <span className="hint-text">

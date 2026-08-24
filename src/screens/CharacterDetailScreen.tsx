@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,6 @@ import {
   RefreshControl,
 } from "react-native";
 import { useRoute, useNavigation, useFocusEffect } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
@@ -57,18 +56,14 @@ interface ActiveDeal {
   expires_at: string;
 }
 
-const device = {
-  shellLight: "#EE4A3E",
-  shell: "#D8342B",
-  shellDark: "#9C231C",
-  bezel: "#262A2E",
-  bezelHighlight: "#3B4046",
-  lensTeal: "#2FBFAE",
-  lensAmber: "#F5C518",
-  readoutBg: "#3B4046",
-  readoutText: "#EAF6F3",
-  caseText: "#FFF3EF",
-};
+// Two local accents, each doing one job: gold is reserved for the
+// evolution/progress story (XP caption, ring, timeline boxes elsewhere),
+// red is everything else interactive (tabs, CTAs, links).
+const ACCENT_GOLD = "#E3A008";
+const ACCENT_RED = "#D8342B";
+// Same locked-state tint as EvolutionTimeline's locked boxes, so the hero
+// placeholder reads as the same "not revealed yet" state, not a separate look.
+const LOCKED_TINT = "#FBEAE8";
 
 export function CharacterDetailScreen() {
   const route = useRoute<any>();
@@ -242,6 +237,29 @@ export function CharacterDetailScreen() {
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [restaurantId])
   );
+
+  // The restaurant's name and its star rating both live in the header now
+  // instead of the body's title row — only known once loaded, so set them
+  // once they arrive. A single star + the number reads fine at header
+  // scale; the full five-star display stays reserved for the review
+  // composer where there's room for it.
+  useEffect(() => {
+    if (!restaurant) return;
+    navigation.setOptions({
+      title: restaurant.name,
+      headerRight:
+        averageRating !== null
+          ? () => (
+              <View style={styles.headerRating}>
+                <MaterialCommunityIcons name="star" size={15} color="#FFD23F" />
+                <Text style={styles.headerRatingText}>
+                  {averageRating} ({ratingCount})
+                </Text>
+              </View>
+            )
+          : undefined,
+    });
+  }, [navigation, restaurant, averageRating, ratingCount]);
 
   const redeem = async (reward: RedeemableReward) => {
     if (!userId) return;
@@ -450,7 +468,7 @@ export function CharacterDetailScreen() {
     return (
       <View style={styles.shell}>
         <View style={styles.centered}>
-          <ActivityIndicator color={device.caseText} />
+          <ActivityIndicator color={ACCENT_RED} />
         </View>
       </View>
     );
@@ -482,61 +500,38 @@ export function CharacterDetailScreen() {
   };
 
   return (
-    <LinearGradient colors={[device.shellLight, device.shell]} style={styles.shell}>
-      <View style={styles.statusRow}>
-        <View style={styles.lensGroup}>
-          <View style={[styles.lens, styles.lensTeal]} />
-          <View style={[styles.lens, styles.lensAmber]} />
+    <View style={styles.shell}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => loadAll(true)} tintColor={ACCENT_RED} />
+        }
+      >
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, !isUnlocked && styles.titleLocked]} numberOfLines={1}>
+            {heroName.toUpperCase()}
+          </Text>
         </View>
-        <View style={styles.readout}>
-          <Text style={styles.readoutText}>{isUnlocked ? `STAGE ${stage}/3` : "LOCKED"}</Text>
-        </View>
-      </View>
 
-      <View style={styles.titleRow}>
-        <Text style={styles.title} numberOfLines={1}>
-          {restaurant.name.toUpperCase()}
-        </Text>
-        {averageRating !== null && (
-          <View style={styles.ratingBadge}>
-            <StarRating value={Math.round(averageRating)} readOnly size={16} color="#FFD23F" />
-            <Text style={styles.ratingBadgeText}>
-              {averageRating} ({ratingCount})
-            </Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.seam} />
-
-      <View style={styles.screen}>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.content}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => loadAll(true)} tintColor={device.caseText} />
-          }
-        >
-          <View style={styles.heroWrap}>
-            <XPBar
-              currentXp={progress?.current_xp ?? 0}
-              currentStage={stage}
-              xpThresholdStage2={character.xp_threshold_stage2}
-              xpThresholdStage3={character.xp_threshold_stage3}
-              size={210}
-              strokeWidth={14}
-            >
-              {isUnlocked && heroArt ? (
-                <Image source={{ uri: heroArt }} style={styles.heroArt} resizeMode="contain" />
-              ) : (
-                <View style={styles.heroLocked}>
-                  <Text style={styles.heroLockedGlyph}>???</Text>
-                </View>
-              )}
-            </XPBar>
-            <Text style={styles.heroName}>{heroName}</Text>
-            <Text style={styles.heroSubtitle}>{restaurant.name}</Text>
-            {isUnlocked && (
+        <View style={styles.heroWrap}>
+          {isUnlocked ? (
+            <>
+              <XPBar
+                currentXp={progress?.current_xp ?? 0}
+                currentStage={stage}
+                xpThresholdStage2={character.xp_threshold_stage2}
+                xpThresholdStage3={character.xp_threshold_stage3}
+                size={210}
+                strokeWidth={14}
+              >
+                {heroArt ? (
+                  <Image source={{ uri: heroArt }} style={styles.heroArt} resizeMode="contain" />
+                ) : (
+                  <View style={styles.heroLocked}>
+                    <Text style={styles.heroLockedGlyph}>???</Text>
+                  </View>
+                )}
+              </XPBar>
               <Text style={styles.xpCaption}>
                 {stage >= 3
                   ? "Max evolution"
@@ -545,11 +540,19 @@ export function CharacterDetailScreen() {
                       (progress?.current_xp ?? 0)
                     } to next stage`}
               </Text>
-            )}
-            {!isUnlocked && (
-              <Text style={styles.lockedHint}>Check in here to reveal this Foodling.</Text>
-            )}
-          </View>
+            </>
+          ) : (
+            // No XP ring here — there's no real progress to show for a
+            // restaurant that's never been visited, and wrapping the box
+            // in the ring anyway just left a stray grey circle behind it.
+            <>
+              <View style={styles.heroLocked}>
+                <Text style={styles.heroLockedGlyph}>???</Text>
+              </View>
+              <Text style={styles.lockedHint}>Scan in here to reveal this Foodling.</Text>
+            </>
+          )}
+        </View>
 
           <EvolutionTimeline
             character={character}
@@ -579,19 +582,10 @@ export function CharacterDetailScreen() {
 
           {tab === "about" ? (
             <View style={styles.aboutBlock}>
-              {(restaurant.cuisine_type || restaurant.neighborhood || restaurant.city) && (
-                <View style={styles.subtitleRow}>
-                  {restaurant.cuisine_type && <Text style={styles.subtitleText}>{restaurant.cuisine_type}</Text>}
-                  {restaurant.cuisine_type && (restaurant.neighborhood || restaurant.city) && (
-                    <Text style={styles.subtitleDot}>•</Text>
-                  )}
-                  {(restaurant.neighborhood || restaurant.city) && (
-                    <Text style={styles.subtitleText}>{restaurant.neighborhood ?? restaurant.city}</Text>
-                  )}
-                </View>
-              )}
 
-              {activeDeal ? (
+              {restaurant.bio && <Text style={styles.bioText}>{restaurant.bio}</Text>}
+
+              {activeDeal && (
                 <>
                   <Text style={styles.sectionLabel}>Today's Deal</Text>
                   <Pressable style={styles.dealCard} onPress={() => setDealModalVisible(true)}>
@@ -606,23 +600,11 @@ export function CharacterDetailScreen() {
                       </Text>
                       <View style={styles.dealCardFooter}>
                         <Text style={styles.dealCardCta}>Tap for details</Text>
-                        <MaterialCommunityIcons name="chevron-right" size={16} color={colors.accentEvolution} />
+                        <MaterialCommunityIcons name="chevron-right" size={16} color={ACCENT_RED} />
                       </View>
                     </View>
                   </Pressable>
                 </>
-              ) : (
-                restaurant.signature_dish && (
-                  <>
-                    <Text style={styles.sectionLabel}>Signature dish</Text>
-                    <View style={styles.dishCard}>
-                      <View style={styles.dishCardIconWrap}>
-                        <MaterialCommunityIcons name="silverware-fork-knife" size={26} color="#FFFFFF" />
-                      </View>
-                      <Text style={styles.dishCardName}>{restaurant.signature_dish}</Text>
-                    </View>
-                  </>
-                )
               )}
 
               {rewards.length > 0 && (
@@ -640,7 +622,11 @@ export function CharacterDetailScreen() {
                         style={[styles.rewardsPreviewRow, i > 0 && styles.rewardsPreviewRowDivider]}
                       >
                         <View style={styles.rewardsPreviewIconWrap}>
-                          <MaterialCommunityIcons name="gift-outline" size={16} color={colors.accentReward} />
+                          {reward.photo_url ? (
+                            <Image source={{ uri: reward.photo_url }} style={styles.rewardsPreviewPhoto} />
+                          ) : (
+                            <MaterialCommunityIcons name="gift-outline" size={16} color={colors.accentReward} />
+                          )}
                         </View>
                         <Text style={styles.rewardsPreviewName} numberOfLines={1}>
                           {reward.title}
@@ -665,7 +651,7 @@ export function CharacterDetailScreen() {
                 </View>
                 <View style={styles.addressCardCta}>
                   <Text style={styles.addressCardCtaLabel}>Open in Maps</Text>
-                  <MaterialCommunityIcons name="chevron-right" size={18} color={colors.accentEvolution} />
+                  <MaterialCommunityIcons name="chevron-right" size={18} color={ACCENT_RED} />
                 </View>
               </Pressable>
             </View>
@@ -690,6 +676,13 @@ export function CharacterDetailScreen() {
                   const isRedeeming = redeemingId === reward.id;
                   return (
                     <View key={reward.id} style={[styles.rewardRow, !affordable && styles.rewardRowLocked]}>
+                      <View style={styles.rewardIconWrap}>
+                        {reward.photo_url ? (
+                          <Image source={{ uri: reward.photo_url }} style={styles.rewardPhoto} />
+                        ) : (
+                          <MaterialCommunityIcons name="gift-outline" size={18} color={colors.accentReward} />
+                        )}
+                      </View>
                       <View style={styles.rewardTextCol}>
                         <Text style={[styles.rewardTitle, !affordable && styles.rewardTitleLocked]}>
                           {reward.title}
@@ -786,7 +779,7 @@ export function CharacterDetailScreen() {
               )}
 
               {!hasCheckedIn && (
-                <Text style={styles.emptyRewardsText}>Check in here to leave a review.</Text>
+                <Text style={styles.emptyRewardsText}>Scan in here to leave a review.</Text>
               )}
 
               {reviews.length === 0 ? (
@@ -847,15 +840,9 @@ export function CharacterDetailScreen() {
                   );
                 })
               )}
-            </View>
-          )}
-        </ScrollView>
-      </View>
-
-      <View style={styles.footerDots}>
-        <View style={styles.footerDot} />
-        <View style={styles.footerDot} />
-      </View>
+          </View>
+        )}
+      </ScrollView>
 
       <Modal visible={!!reviewThanks} transparent animationType="fade">
         <View style={styles.overlay}>
@@ -910,7 +897,7 @@ export function CharacterDetailScreen() {
                       <MaterialCommunityIcons
                         name={dealSaved ? "bookmark" : "bookmark-outline"}
                         size={18}
-                        color={dealSaved ? "#FFFFFF" : colors.accentEvolution}
+                        color={dealSaved ? "#FFFFFF" : ACCENT_RED}
                       />
                       <Text style={[styles.dealModalSaveLabel, dealSaved && styles.dealModalSaveLabelActive]}>
                         {dealSaved ? "Saved" : "Save deal"}
@@ -923,97 +910,45 @@ export function CharacterDetailScreen() {
           </View>
         </View>
       </Modal>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   shell: {
     flex: 1,
-    backgroundColor: device.shell,
-    paddingTop: spacing.lg,
-    paddingHorizontal: spacing.md,
+    backgroundColor: colors.background,
   },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background },
+  titleRow: {
     marginBottom: spacing.sm,
   },
-  lensGroup: { flexDirection: "row", alignItems: "center" },
-  lens: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginRight: spacing.sm,
-    borderWidth: 2,
-    borderColor: "rgba(0,0,0,0.15)",
+  title: { fontSize: 22, fontWeight: "800", letterSpacing: 1, color: colors.textPrimary },
+  titleLocked: { color: ACCENT_RED },
+  headerRating: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingRight: spacing.md,
   },
-  lensTeal: { backgroundColor: device.lensTeal, width: 20, height: 20, borderRadius: 10 },
-  lensAmber: { backgroundColor: device.lensAmber },
-  readout: {
-    backgroundColor: device.readoutBg,
-    borderRadius: 6,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-  },
-  readoutText: {
-    fontFamily: "monospace",
+  headerRatingText: {
     fontSize: 13,
     fontWeight: "700",
-    letterSpacing: 1,
-    color: device.readoutText,
+    color: colors.textPrimary,
   },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.sm,
-  },
-  title: { fontSize: 22, fontWeight: "800", letterSpacing: 1, color: device.caseText, flexShrink: 1 },
-  ratingBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.25)",
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    marginLeft: spacing.sm,
-  },
-  ratingBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: device.caseText,
-    marginLeft: 4,
-  },
-  seam: {
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: device.shellDark,
-    marginBottom: spacing.sm,
-    opacity: 0.6,
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    borderRadius: 18,
-    borderWidth: 6,
-    borderColor: device.bezel,
-    overflow: "hidden",
-  },
-  scroll: { flex: 1 },
-  content: { padding: spacing.md },
+  content: { padding: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.xl },
   heroWrap: { alignItems: "center", marginBottom: spacing.lg },
   heroArt: { width: 180, height: 180 },
   heroLocked: {
     width: 180,
     height: 180,
     borderRadius: radii.card,
-    backgroundColor: colors.surfaceMuted,
+    // Same red-tinted "locked" language as the evolution boxes below it,
+    // instead of a plain grey placeholder that reads as an empty/broken
+    // state rather than an intentional tease.
+    backgroundColor: LOCKED_TINT,
     borderWidth: 2,
-    borderColor: colors.border,
-    borderStyle: "dashed",
+    borderColor: ACCENT_RED,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1022,16 +957,14 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontSize: 28,
     letterSpacing: 2,
-    color: colors.textSecondary,
+    color: ACCENT_RED,
   },
-  heroName: { fontSize: 22, fontWeight: "700", color: colors.textPrimary, marginTop: spacing.sm },
-  heroSubtitle: { fontSize: 14, color: colors.textSecondary },
-  lockedHint: { fontSize: 13, color: colors.textSecondary, marginTop: spacing.xs, textAlign: "center" },
+  lockedHint: { fontSize: 13, color: colors.textSecondary, marginTop: spacing.sm, textAlign: "center" },
   xpCaption: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
+    fontSize: 20,
+    fontWeight: "800",
+    color: ACCENT_GOLD,
+    marginTop: spacing.sm,
     textAlign: "center",
   },
   tabRow: {
@@ -1048,11 +981,17 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
   },
   tabButtonActive: {
-    backgroundColor: colors.accentEvolution,
+    backgroundColor: ACCENT_RED,
   },
   tabLabel: { color: colors.textSecondary, fontWeight: "700", fontSize: 13 },
   tabLabelActive: { color: "#FFFFFF", fontWeight: "800" },
   aboutBlock: { marginTop: spacing.md },
+  bioText: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: colors.textPrimary,
+    marginBottom: spacing.lg,
+  },
   rewardsBlock: { marginTop: spacing.md },
   sectionLabel: {
     fontSize: 12,
@@ -1062,15 +1001,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   bodyText: { fontSize: 15, color: colors.textPrimary, marginTop: spacing.xs },
-  locationLink: { color: colors.accentEvolution, fontWeight: "600" },
-
-  subtitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-  },
-  subtitleText: { fontSize: 14, color: colors.textSecondary, fontWeight: "600" },
-  subtitleDot: { fontSize: 14, color: colors.textSecondary, marginHorizontal: 6 },
+  locationLink: { color: ACCENT_RED, fontWeight: "600" },
 
   sectionLabelRow: {
     flexDirection: "row",
@@ -1081,7 +1012,7 @@ const styles = StyleSheet.create({
   sectionLabelAction: {
     fontSize: 12,
     fontWeight: "700",
-    color: colors.accentEvolution,
+    color: ACCENT_RED,
     marginTop: spacing.md,
   },
 
@@ -1110,7 +1041,7 @@ const styles = StyleSheet.create({
   dealCardBody: { padding: spacing.md },
   dealCardDescription: { fontSize: 14, color: colors.textPrimary, lineHeight: 20 },
   dealCardFooter: { flexDirection: "row", alignItems: "center", marginTop: spacing.xs },
-  dealCardCta: { fontSize: 12, fontWeight: "700", color: colors.accentEvolution, marginRight: 2 },
+  dealCardCta: { fontSize: 12, fontWeight: "700", color: ACCENT_RED, marginRight: 2 },
 
   dealModalBackdrop: {
     flex: 1,
@@ -1157,34 +1088,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     borderWidth: 1.5,
-    borderColor: colors.accentEvolution,
+    borderColor: ACCENT_RED,
     borderRadius: radii.pill,
     paddingVertical: spacing.sm,
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
-  dealModalSaveButtonActive: { backgroundColor: colors.accentEvolution },
-  dealModalSaveLabel: { fontSize: 15, fontWeight: "700", color: colors.accentEvolution },
+  dealModalSaveButtonActive: { backgroundColor: ACCENT_RED },
+  dealModalSaveLabel: { fontSize: 15, fontWeight: "700", color: ACCENT_RED },
   dealModalSaveLabelActive: { color: "#FFFFFF" },
-
-  dishCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.accentEvolution,
-    borderRadius: radii.card,
-    padding: spacing.md,
-    marginTop: spacing.sm,
-  },
-  dishCardIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.md,
-  },
-  dishCardName: { fontSize: 16, fontWeight: "700", color: "#FFFFFF", flexShrink: 1 },
 
   rewardsPreviewCard: {
     backgroundColor: colors.surface,
@@ -1212,7 +1124,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.sm,
+    overflow: "hidden",
   },
+  rewardsPreviewPhoto: { width: 28, height: 28 },
   rewardsPreviewName: { flex: 1, fontSize: 13, fontWeight: "600", color: colors.textPrimary },
   rewardsPreviewCost: { fontSize: 12, fontWeight: "700", color: colors.accentReward },
 
@@ -1230,7 +1144,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.textPrimary,
+    backgroundColor: ACCENT_RED,
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.sm,
@@ -1239,7 +1153,7 @@ const styles = StyleSheet.create({
   addressCardText: { fontSize: 14, fontWeight: "600", color: colors.textPrimary },
   addressCardCity: { fontSize: 12, color: colors.textSecondary, marginTop: 1 },
   addressCardCta: { alignItems: "center" },
-  addressCardCtaLabel: { fontSize: 11, fontWeight: "700", color: colors.accentEvolution },
+  addressCardCtaLabel: { fontSize: 11, fontWeight: "700", color: ACCENT_RED },
 
   pointsHero: {
     backgroundColor: colors.accentReward,
@@ -1289,6 +1203,17 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginTop: spacing.sm,
   },
+  rewardIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.sm,
+    overflow: "hidden",
+  },
+  rewardPhoto: { width: 40, height: 40 },
   rewardRowLocked: { opacity: 0.6 },
   rewardTextCol: { flex: 1 },
   rewardTitle: { fontSize: 14, fontWeight: "600", color: colors.textPrimary },
@@ -1341,7 +1266,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   reviewSaveButton: {
-    backgroundColor: colors.accentEvolution,
+    backgroundColor: ACCENT_RED,
     borderRadius: radii.pill,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
@@ -1374,7 +1299,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   reviewCardMine: {
-    borderColor: colors.accentEvolution,
+    borderColor: ACCENT_RED,
     borderWidth: 1.5,
   },
   reviewHeaderRow: { flexDirection: "row", alignItems: "center", marginBottom: spacing.xs },
@@ -1396,23 +1321,8 @@ const styles = StyleSheet.create({
   reviewBody: { fontSize: 14, color: colors.textPrimary, lineHeight: 20 },
   reviewPhoto: { width: "100%", height: 180, borderRadius: radii.card, marginTop: spacing.sm },
   reviewCardActions: { flexDirection: "row", gap: 10 },
-  reviewCardActionLabel: { fontSize: 12, fontWeight: "600", color: colors.accentEvolution },
+  reviewCardActionLabel: { fontSize: 12, fontWeight: "600", color: ACCENT_RED },
   reviewCardDeleteLabel: { color: colors.accentAlert },
-
-  footerDots: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  footerDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: device.shellDark,
-    marginHorizontal: 4,
-    opacity: 0.7,
-  },
 
   overlay: {
     flex: 1,

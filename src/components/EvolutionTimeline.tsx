@@ -16,6 +16,12 @@ const STAGE_ART = ["art_url_stage1", "art_url_stage2", "art_url_stage3"] as cons
 
 const LOCKED_RED = "#D8342B";
 const LOCKED_TINT = "#FBEAE8";
+// Warm gold rather than the shared colors.accentEvolution orange — reads
+// as an "achievement" accent and sits better against the red device shell
+// these boxes usually appear inside (Collection, Character Detail). Shared
+// exact value with XPBar's ring and CharacterDetailScreen's XP caption so
+// all three read as one consistent gold, not three near-misses.
+const REACHED_GOLD = "#E3A008";
 
 /**
  * The single evolution-progress component used on the Collection screen
@@ -63,7 +69,13 @@ export function EvolutionTimeline({ character, progress }: Props) {
               <Text style={[styles.stageName, isReached && styles.stageNameReached]}>
                 {isReached ? character[key] : "???"}
               </Text>
-              {i > 0 && <Text style={styles.threshold}>{thresholds[i]} xp</Text>}
+              {/* Stage 1 has no "reach" threshold (it's the starting
+                  point), but the line still renders — invisible — so its
+                  box reserves the same height as stages 2/3 instead of
+                  shrinking to fit one less line of content. */}
+              <Text style={[styles.threshold, i === 0 && styles.thresholdHidden]}>
+                {i > 0 ? `${thresholds[i]} xp` : " "}
+              </Text>
             </View>
             {i < STAGE_LABELS.length - 1 && (
               <View style={[styles.connector, isReached && styles.connectorReached]} />
@@ -87,7 +99,7 @@ const styles = StyleSheet.create({
   },
   box: {
     flex: 1,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
     borderRadius: radii.card,
     paddingVertical: spacing.sm,
@@ -97,15 +109,20 @@ const styles = StyleSheet.create({
   },
   boxReached: {
     backgroundColor: colors.surface,
-    borderColor: colors.accentEvolution,
+    borderColor: REACHED_GOLD,
   },
+  // "Current" stage is marked with a glow rather than a thicker border, so
+  // border weight stays identical across all three boxes regardless of
+  // state — only color (and this shadow) carries the distinction.
   boxCurrent: {
-    borderWidth: 2,
+    shadowColor: REACHED_GOLD,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 3,
   },
   boxLocked: {
-    borderWidth: 1.5,
     borderColor: LOCKED_RED,
-    borderStyle: "solid",
     backgroundColor: LOCKED_TINT,
     shadowColor: LOCKED_RED,
     shadowOffset: { width: 0, height: 3 },
@@ -151,12 +168,15 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
+  thresholdHidden: {
+    opacity: 0,
+  },
   connector: {
     height: 2,
     width: spacing.sm,
     backgroundColor: colors.border,
   },
   connectorReached: {
-    backgroundColor: colors.accentEvolution,
+    backgroundColor: REACHED_GOLD,
   },
 });

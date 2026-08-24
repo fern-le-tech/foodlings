@@ -1,37 +1,58 @@
 {
-  "expo": {"scheme": "foodlings",
+  "expo": {
+    "scheme": "foodlings",
     "name": "Foodlings",
     "slug": "foodlings",
     "version": "0.1.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon-v2.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#FFF8EF"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "android": {
       "package": "com.foodlings.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFF8EF"
+        "foregroundImage": "./assets/adaptive-icon-v2.png",
+        "backgroundColor": "#D8342B"
       },
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"]
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.foodlings.app",
       "infoPlist": {
         "NSCameraUsageDescription": "Foodlings uses the camera to scan check-in QR codes and let you snap photos of your food for reviews.",
-        "NSPhotoLibraryUsageDescription": "Foodlings needs photo library access so you can attach a photo to your review."
+        "NSPhotoLibraryUsageDescription": "Foodlings needs photo library access so you can attach a photo to your review.",
+        "NSLocationWhenInUseUsageDescription": "Foodlings uses your location to show partner restaurants near you, closest first."
       }
     },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Foodlings uses your location to show partner restaurants near you, closest first."
+        }
+      ]
+    ],
     "extra": {
       "supabaseUrl": "https://svndowiisksyzorvqxjn.supabase.co",
       "supabaseAnonKey": "sb_publishable_cuFx8QdBNoIKM_U7855gFQ_AmGW2Ed3",
-      "staffPortalUrl": "http://10.0.0.18:5173"
-    }
+      "staffPortalUrl": "http://10.0.0.18:5173",
+      "eas": {
+        "projectId": "3beab9ff-7b8b-4386-ac4d-645755f399ac"
+      }
+    },
+    "owner": "foodlings"
   }
 }

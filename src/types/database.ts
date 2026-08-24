@@ -38,6 +38,8 @@ export type Restaurant = {
   signature_dish: string | null;
   partner_status: PartnerStatus;
   created_at: string;
+  banner_url: string | null;
+  bio: string | null;
 };
 
 export type FoodlingCharacter = {
@@ -84,6 +86,7 @@ export type RedeemableReward = {
   points_cost: number;
   active: boolean;
   created_at: string;
+  photo_url: string | null;
 };
 
 export type RedemptionStatus = "pending" | "fulfilled" | "cancelled";

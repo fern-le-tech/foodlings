@@ -11,20 +11,13 @@ import {
   RefreshControl,
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { supabase } from "@/lib/supabase";
 import { colors, spacing, radii } from "@/theme/colors";
-import { XPBar } from "@/components/XPBar";
+import { MilestoneBadge } from "@/components/MilestoneBadge";
 import type { User } from "@/types/database";
 
-// Matches ProfileScreen's trainer-card banner treatment for consistency —
-// this screen is reached from Leaderboard taps, so it should feel like the
-// same "kind" of screen, not a plainer cousin of it.
 const PROFILE_RED = "#D8342B";
-const PROFILE_RED_LIGHT = "#E8776D";
-const BANNER_HEIGHT = 120;
 
 interface ProgressRow {
   restaurant_id: string;
@@ -55,7 +48,6 @@ interface FavoriteCharacter {
  */
 export function PublicProfileScreen() {
   const route = useRoute<any>();
-  const insets = useSafeAreaInsets();
   const { userId } = route.params as { userId: string };
 
   const [loading, setLoading] = useState(true);
@@ -63,9 +55,7 @@ export function PublicProfileScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [totalCharacters, setTotalCharacters] = useState(0);
   const [collectedCount, setCollectedCount] = useState(0);
-  const [regionCount, setRegionCount] = useState(0);
   const [totalXp, setTotalXp] = useState(0);
-  const [totalPoints, setTotalPoints] = useState(0);
   const [favorite, setFavorite] = useState<ProgressRow | null>(null);
   const [favoriteChar, setFavoriteChar] = useState<FavoriteCharacter | null>(null);
 
@@ -77,25 +67,21 @@ export function PublicProfileScreen() {
         setLoading(true);
       }
 
-      const [{ data: userRow }, { count: characterCount }, { data: progressRows }, { data: checkins }] =
-        await Promise.all([
-          supabase.from("users").select("*").eq("id", userId).single(),
-          supabase.from("foodling_characters").select("*", { count: "exact", head: true }),
-          supabase
-            .from("user_restaurant_progress")
-            .select("restaurant_id, current_xp, current_stage, restaurants(name, city)")
-            .eq("user_id", userId),
-          supabase.from("checkins").select("points_awarded").eq("user_id", userId),
-        ]);
+      const [{ data: userRow }, { count: characterCount }, { data: progressRows }] = await Promise.all([
+        supabase.from("users").select("*").eq("id", userId).single(),
+        supabase.from("foodling_characters").select("*", { count: "exact", head: true }),
+        supabase
+          .from("user_restaurant_progress")
+          .select("restaurant_id, current_xp, current_stage, restaurants(name, city)")
+          .eq("user_id", userId),
+      ]);
 
       setUser(userRow);
       setTotalCharacters(characterCount ?? 0);
 
       const rows = (progressRows ?? []) as unknown as ProgressRow[];
       setCollectedCount(rows.length);
-      setRegionCount(new Set(rows.map((r) => r.restaurants?.city).filter(Boolean)).size);
       setTotalXp(rows.reduce((sum, r) => sum + r.current_xp, 0));
-      setTotalPoints((checkins ?? []).reduce((sum, c) => sum + (c.points_awarded ?? 0), 0));
 
       const topRow = rows.reduce<ProgressRow | null>((best, r) => {
         if (!best || r.current_xp > best.current_xp) return r;
@@ -163,11 +149,6 @@ export function PublicProfileScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={() => loadAll(true)} tintColor={PROFILE_RED} />
       }
     >
-      <LinearGradient
-        colors={[PROFILE_RED, PROFILE_RED_LIGHT]}
-        style={[styles.banner, { height: insets.top + BANNER_HEIGHT }]}
-      />
-
       <View style={styles.body}>
         <View style={styles.header}>
           {user.avatar_url ? (
@@ -181,11 +162,14 @@ export function PublicProfileScreen() {
           <Text style={styles.joinedLabel}>Joined {joinedLabel}</Text>
         </View>
 
+        <Text style={styles.sectionLabel}>Rank</Text>
+        <View style={styles.rankCard}>
+          <MilestoneBadge collectedCount={collectedCount} size={56} />
+        </View>
+
         <View style={styles.statsGrid}>
           <StatCard label="Foodlings collected" value={`${collectedCount} / ${totalCharacters}`} />
-          <StatCard label="Regions visited" value={String(regionCount)} />
           <StatCard label="Total XP (all-time)" value={totalXp.toLocaleString()} />
-          <StatCard label="Reward points (all-time)" value={totalPoints.toLocaleString()} />
         </View>
 
         <Text style={styles.sectionLabel}>Favorite Foodling</Text>
@@ -202,17 +186,6 @@ export function PublicProfileScreen() {
                 <Text style={styles.favoriteRestaurant}>{favorite.restaurants?.name}</Text>
               </View>
             </View>
-
-            {favoriteStage < 3 && (
-              <View style={styles.favoriteXpBarWrap}>
-                <XPBar
-                  currentXp={favorite.current_xp}
-                  currentStage={favoriteStage}
-                  xpThresholdStage2={favoriteChar.xp_threshold_stage2}
-                  xpThresholdStage3={favoriteChar.xp_threshold_stage3}
-                />
-              </View>
-            )}
           </View>
         ) : (
           <Text style={styles.emptyText}>No check-ins yet.</Text>
@@ -250,9 +223,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background },
   content: { paddingBottom: spacing.xl },
-  banner: { width: "100%" },
   body: { paddingHorizontal: spacing.md },
-  header: { alignItems: "center", marginTop: -50, marginBottom: spacing.lg },
+  header: { alignItems: "center", marginTop: spacing.lg, marginBottom: spacing.lg },
   avatar: { width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: colors.surface },
   avatarFallback: {
     width: 88,
@@ -303,6 +275,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   emptyText: { fontSize: 14, color: colors.textSecondary },
+  rankCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.card,
+    padding: spacing.md,
+  },
   favoriteCard: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -325,7 +304,6 @@ const styles = StyleSheet.create({
   },
   favoriteName: { fontSize: 15, fontWeight: "700", color: colors.textPrimary },
   favoriteRestaurant: { fontSize: 13, color: colors.textSecondary },
-  favoriteXpBarWrap: { marginTop: spacing.md },
   instagramRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   instagramLink: { fontSize: 15, color: PROFILE_RED, fontWeight: "600" },
 });

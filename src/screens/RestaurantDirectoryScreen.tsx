@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -10,10 +10,9 @@ import {
   RefreshControl,
 } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "@/lib/supabase";
-import { colors, spacing, radii, TAB_BAR_CLEARANCE } from "@/theme/colors";
+import { colors, spacing, radii } from "@/theme/colors";
+import { useTabBarClearance } from "@/hooks/useTabBarClearance";
 import type { Restaurant } from "@/types/database";
 
 interface CharacterRow {
@@ -35,11 +34,10 @@ interface ProgressRow {
 // accentEvolution orange, which stays reserved for evolution/XP progress
 // elsewhere in the app (see the semantic-color note in theme/colors.ts).
 const DIRECTORY_RED = "#D8342B";
-const DIRECTORY_RED_LIGHT = "#E8776D";
 
 export function RestaurantDirectoryScreen() {
   const navigation = useNavigation<any>();
-  const insets = useSafeAreaInsets();
+  const tabBarClearance = useTabBarClearance();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [charactersByRestaurant, setCharactersByRestaurant] = useState<Map<string, CharacterRow>>(
     new Map()
@@ -118,6 +116,22 @@ export function RestaurantDirectoryScreen() {
     };
   }, [userId, load]);
 
+  // Unlocked Foodlings float to the top so your progress is the first
+  // thing you see; the query already returns restaurants alphabetically,
+  // and Array.sort is stable, so this partition keeps each group (unlocked,
+  // then locked) in that same A-Z order rather than shuffling either one.
+  // Computed above the loading early-return since hooks can't be called
+  // conditionally.
+  const sortedRestaurants = useMemo(
+    () =>
+      [...restaurants].sort((a, b) => {
+        const aUnlocked = progressByRestaurant.has(a.id) ? 0 : 1;
+        const bUnlocked = progressByRestaurant.has(b.id) ? 0 : 1;
+        return aUnlocked - bUnlocked;
+      }),
+    [restaurants, progressByRestaurant]
+  );
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -130,14 +144,7 @@ export function RestaurantDirectoryScreen() {
 
   return (
     <View style={styles.screen}>
-      <LinearGradient
-        colors={[DIRECTORY_RED, DIRECTORY_RED_LIGHT]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.headerPanel, { paddingTop: insets.top + spacing.sm }]}
-      >
-        <Text style={styles.eyebrow}>DIRECTORY</Text>
-        <Text style={styles.title}>Partner restaurants</Text>
+      <View style={styles.progressSection}>
         <View style={styles.progressRow}>
           <View style={styles.progressTrack}>
             <View
@@ -151,22 +158,16 @@ export function RestaurantDirectoryScreen() {
             {unlockedCount} / {restaurants.length} visited
           </Text>
         </View>
-      </LinearGradient>
-
-      <View style={styles.perforationRow}>
-        <View style={styles.perforationNotchLeft} />
-        <View style={styles.perforationLine} />
-        <View style={styles.perforationNotchRight} />
       </View>
 
       <FlatList
-        data={restaurants}
+        data={sortedRestaurants}
         keyExtractor={(item) => item.id}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={DIRECTORY_RED} />
         }
         style={styles.list}
-        contentContainerStyle={{ padding: spacing.md, paddingTop: spacing.md, paddingBottom: TAB_BAR_CLEARANCE }}
+        contentContainerStyle={{ padding: spacing.md, paddingTop: spacing.sm, paddingBottom: tabBarClearance }}
         renderItem={({ item, index }) => {
           const character = charactersByRestaurant.get(item.id);
           const progress = progressByRestaurant.get(item.id);
@@ -185,11 +186,15 @@ export function RestaurantDirectoryScreen() {
               style={[styles.row, index % 2 === 1 ? styles.rowAlt : null]}
               onPress={() => navigation.navigate("CharacterDetail", { restaurantId: item.id })}
             >
-              <View style={[styles.medallion, !isUnlocked ? styles.medallionLocked : null]}>
-                {isUnlocked && art ? (
-                  <Image source={{ uri: art }} style={styles.medallionArt} resizeMode="contain" />
+              <View style={styles.medallion}>
+                {item.banner_url ? (
+                  <Image source={{ uri: item.banner_url }} style={styles.medallionPhoto} resizeMode="cover" />
                 ) : (
-                  <Text style={styles.medallionUnknown}>???</Text>
+                  <Image
+                    source={require("../../assets/adaptive-icon-v2.png")}
+                    style={styles.medallionMark}
+                    resizeMode="contain"
+                  />
                 )}
               </View>
 
@@ -207,7 +212,11 @@ export function RestaurantDirectoryScreen() {
 
               {isUnlocked ? (
                 <View style={styles.unlockedBadge}>
-                  <Text style={styles.unlockedBadgeLabel}>✓</Text>
+                  {art ? (
+                    <Image source={{ uri: art }} style={styles.unlockedBadgeArt} resizeMode="contain" />
+                  ) : (
+                    <Text style={styles.unlockedBadgeLabel}>✓</Text>
+                  )}
                 </View>
               ) : null}
             </Pressable>
@@ -233,70 +242,32 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  headerPanel: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.lg,
-  },
-  eyebrow: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.5,
-    color: "rgba(255,255,255,0.85)",
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#FFFFFF",
+  progressSection: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
   },
   progressRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: spacing.md,
   },
   progressTrack: {
     flex: 1,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.35)",
+    backgroundColor: colors.surfaceMuted,
     overflow: "hidden",
     marginRight: spacing.sm,
   },
   progressFill: {
     height: "100%",
     borderRadius: 4,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: DIRECTORY_RED,
   },
   progressLabel: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#FFFFFF",
-  },
-  perforationRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.background,
-  },
-  perforationNotchLeft: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: colors.background,
-    marginLeft: -8,
-  },
-  perforationNotchRight: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: colors.background,
-    marginRight: -8,
-  },
-  perforationLine: {
-    flex: 1,
-    borderTopWidth: 2,
-    borderStyle: "dashed",
-    borderColor: colors.border,
-    marginHorizontal: spacing.xs,
+    color: colors.textSecondary,
   },
   list: {
     flex: 1,
@@ -329,22 +300,13 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
     overflow: "hidden",
   },
-  medallionLocked: {
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderStyle: "dashed",
+  medallionPhoto: {
+    width: "100%",
+    height: "100%",
   },
-  medallionArt: {
-    width: 40,
-    height: 40,
-  },
-  medallionUnknown: {
-    fontFamily: "monospace",
-    fontWeight: "800",
-    fontSize: 12,
-    letterSpacing: 1,
-    color: colors.textSecondary,
+  medallionMark: {
+    width: 32,
+    height: 32,
   },
   rowTextCol: {
     flex: 1,
@@ -379,13 +341,20 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   unlockedBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: DIRECTORY_RED,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: spacing.sm,
+    borderWidth: 2,
+    borderColor: colors.surface,
+    overflow: "hidden",
+  },
+  unlockedBadgeArt: {
+    width: 26,
+    height: 26,
   },
   unlockedBadgeLabel: {
     color: colors.surface,

@@ -13,22 +13,17 @@ import {
   RefreshControl,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { supabase } from "@/lib/supabase";
-import { colors, spacing, radii, TAB_BAR_CLEARANCE } from "@/theme/colors";
+import { colors, spacing, radii } from "@/theme/colors";
+import { useTabBarClearance } from "@/hooks/useTabBarClearance";
 import { AvatarPickerModal } from "@/components/AvatarPickerModal";
 import { XPBar } from "@/components/XPBar";
+import { MilestoneBadge } from "@/components/MilestoneBadge";
 import type { User } from "@/types/database";
 
-// Same red used on Directory/Leaderboard/Home/Collection — a "trainer
-// card" banner behind the avatar rather than a full-page background, so
-// the stat cards and favorite-Foodling art stay legible on the neutral
-// body below it.
+// Same red used on Directory/Leaderboard/Home/Collection.
 const PROFILE_RED = "#D8342B";
-const PROFILE_RED_LIGHT = "#E8776D";
-const BANNER_HEIGHT = 120;
 
 interface ProgressRow {
   restaurant_id: string;
@@ -57,15 +52,13 @@ interface FavoriteCharacter {
  * optional Instagram link the person can add themselves.
  */
 export function ProfileScreen() {
-  const insets = useSafeAreaInsets();
+  const tabBarClearance = useTabBarClearance();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [totalCharacters, setTotalCharacters] = useState(0);
   const [collectedCount, setCollectedCount] = useState(0);
-  const [regionCount, setRegionCount] = useState(0);
   const [totalXp, setTotalXp] = useState(0);
-  const [totalPoints, setTotalPoints] = useState(0);
   const [favorite, setFavorite] = useState<ProgressRow | null>(null);
   const [favoriteChar, setFavoriteChar] = useState<FavoriteCharacter | null>(null);
   const [editingInstagram, setEditingInstagram] = useState(false);
@@ -92,16 +85,14 @@ export function ProfileScreen() {
       return;
     }
 
-    const [{ data: userRow }, { count: characterCount }, { data: progressRows }, { data: checkins }] =
-      await Promise.all([
-        supabase.from("users").select("*").eq("id", authUser.id).single(),
-        supabase.from("foodling_characters").select("*", { count: "exact", head: true }),
-        supabase
-          .from("user_restaurant_progress")
-          .select("restaurant_id, current_xp, current_stage, restaurants(name, city)")
-          .eq("user_id", authUser.id),
-        supabase.from("checkins").select("points_awarded").eq("user_id", authUser.id),
-      ]);
+    const [{ data: userRow }, { count: characterCount }, { data: progressRows }] = await Promise.all([
+      supabase.from("users").select("*").eq("id", authUser.id).single(),
+      supabase.from("foodling_characters").select("*", { count: "exact", head: true }),
+      supabase
+        .from("user_restaurant_progress")
+        .select("restaurant_id, current_xp, current_stage, restaurants(name, city)")
+        .eq("user_id", authUser.id),
+    ]);
 
     setUser(userRow);
     setInstagramInput(userRow?.instagram_handle ?? "");
@@ -110,9 +101,7 @@ export function ProfileScreen() {
 
     const rows = (progressRows ?? []) as unknown as ProgressRow[];
     setCollectedCount(rows.length);
-    setRegionCount(new Set(rows.map((r) => r.restaurants?.city).filter(Boolean)).size);
     setTotalXp(rows.reduce((sum, r) => sum + r.current_xp, 0));
-    setTotalPoints((checkins ?? []).reduce((sum, c) => sum + (c.points_awarded ?? 0), 0));
 
     // Favorite = whichever restaurant they've earned the most XP at, i.e.
     // the place they visit/check in at most.
@@ -248,16 +237,11 @@ export function ProfileScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: tabBarClearance }]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={PROFILE_RED} />
       }
     >
-      <LinearGradient
-        colors={[PROFILE_RED, PROFILE_RED_LIGHT]}
-        style={[styles.banner, { height: insets.top + BANNER_HEIGHT }]}
-      />
-
       <View style={styles.body}>
         <View style={styles.header}>
           <Pressable onPress={() => setAvatarPickerVisible(true)}>
@@ -289,8 +273,11 @@ export function ProfileScreen() {
               </Pressable>
             </View>
           ) : (
-            <Pressable onPress={() => setEditingName(true)}>
-              <Text style={styles.displayName}>{user.display_name} ✎</Text>
+            <Pressable style={styles.nameRow} onPress={() => setEditingName(true)}>
+              <Text style={styles.displayName}>{user.display_name}</Text>
+              <View style={styles.nameEditBadge}>
+                <Text style={styles.avatarEditBadgeLabel}>Edit</Text>
+              </View>
             </Pressable>
           )}
 
@@ -300,15 +287,19 @@ export function ProfileScreen() {
         <AvatarPickerModal
           visible={avatarPickerVisible}
           currentUrl={user.avatar_url}
+          userId={user.id}
           onSelect={selectAvatar}
           onClose={() => setAvatarPickerVisible(false)}
         />
 
+        <Text style={styles.sectionLabel}>Rank</Text>
+        <View style={styles.rankCard}>
+          <MilestoneBadge collectedCount={collectedCount} size={56} />
+        </View>
+
         <View style={styles.statsGrid}>
           <StatCard label="Foodlings collected" value={`${collectedCount} / ${totalCharacters}`} />
-          <StatCard label="Regions visited" value={String(regionCount)} />
           <StatCard label="Total XP (all-time)" value={totalXp.toLocaleString()} />
-          <StatCard label="Reward points (all-time)" value={totalPoints.toLocaleString()} />
         </View>
 
         <Text style={styles.sectionLabel}>Favorite Foodling</Text>
@@ -338,7 +329,7 @@ export function ProfileScreen() {
             )}
           </View>
         ) : (
-          <Text style={styles.emptyText}>Check in somewhere to get your first Foodling.</Text>
+          <Text style={styles.emptyText}>Scan in somewhere to get your first Foodling.</Text>
         )}
 
         <Text style={styles.sectionLabel}>Instagram</Text>
@@ -406,13 +397,9 @@ function StatCard({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background },
-  content: { paddingBottom: TAB_BAR_CLEARANCE },
-  banner: { width: "100%" },
+  content: {},
   body: { paddingHorizontal: spacing.md },
-  // Pulls the avatar up so it straddles the banner/body boundary, "trainer
-  // card" style — everything below (name, joined date) stays in normal
-  // flow, so only the avatar itself overlaps.
-  header: { alignItems: "center", marginTop: -50, marginBottom: spacing.lg },
+  header: { alignItems: "center", marginTop: spacing.lg, marginBottom: spacing.lg },
   avatar: { width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: colors.surface },
   avatarFallback: {
     width: 88,
@@ -435,7 +422,19 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   avatarEditBadgeLabel: { fontSize: 10, fontWeight: "700", color: colors.surface },
-  displayName: { fontSize: 20, fontWeight: "700", color: colors.textPrimary, marginTop: spacing.sm },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  nameEditBadge: {
+    backgroundColor: colors.textPrimary,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  displayName: { fontSize: 20, fontWeight: "700", color: colors.textPrimary },
   joinedLabel: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
   nameEditRow: {
     flexDirection: "row",
@@ -452,6 +451,14 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
     minWidth: 120,
     textAlign: "center",
+  },
+  rankCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.card,
+    padding: spacing.md,
+    marginBottom: spacing.md,
   },
   statsGrid: {
     flexDirection: "row",

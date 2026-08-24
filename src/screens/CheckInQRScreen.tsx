@@ -1,29 +1,18 @@
 import { useEffect, useState, useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView, RefreshControl } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import QRCode from "react-native-qrcode-svg";
 import { useNavigation } from "@react-navigation/native";
 import { supabase } from "@/lib/supabase";
 import { colors, spacing } from "@/theme/colors";
+import { useTabBarClearance } from "@/hooks/useTabBarClearance";
 
 const ROTATE_INTERVAL_MS = 3 * 60 * 1000; // 3 min, per brief
 
-// Same retro-handheld-device chrome as Collection/CharacterDetail — this
-// screen is the other natural fit for it (a scanning gadget moment, no
-// food photography to clash with), so it gets the full treatment rather
-// than the lighter red-header pattern used on Home/Leaderboard/Profile.
-const device = {
-  shellLight: "#EE4A3E",
-  shell: "#D8342B",
-  shellDark: "#9C231C",
-  bezel: "#262A2E",
-  bezelHighlight: "#3B4046",
-  lensTeal: "#2FBFAE",
-  lensAmber: "#F5C518",
-  readoutBg: "#3B4046",
-  readoutText: "#EAF6F3",
-  caseText: "#FFF3EF",
-};
+const CHECKIN_RED = "#D8342B";
+// Dark bezel border around the QR card — the one surviving piece of the
+// old retro-scanner chrome, kept because it reads as "device screen"
+// around the code itself without needing the full red shell around it.
+const BEZEL = "#262A2E";
 
 function formatCountdown(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -42,6 +31,7 @@ function formatCountdown(seconds: number): string {
  */
 export function CheckInQRScreen() {
   const navigation = useNavigation<any>();
+  const tabBarClearance = useTabBarClearance();
   const [token, setToken] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(ROTATE_INTERVAL_MS / 1000);
   const [refreshing, setRefreshing] = useState(false);
@@ -162,28 +152,14 @@ export function CheckInQRScreen() {
   }, [mintToken]);
 
   return (
-    <LinearGradient colors={[device.shellLight, device.shell]} style={styles.shell}>
-      <View style={styles.statusRow}>
-        <View style={styles.lensGroup}>
-          <View style={[styles.lens, styles.lensTeal]} />
-          <View style={[styles.lens, styles.lensAmber]} />
-        </View>
-        <View style={styles.readout}>
-          <Text style={styles.readoutText}>{formatCountdown(secondsLeft)}</Text>
-        </View>
-      </View>
-
-      <Text style={styles.title}>CHECK IN</Text>
-
-      <View style={styles.seam} />
-
-      <View style={styles.screen}>
-        <ScrollView
-          contentContainerStyle={styles.centered}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={device.shell} />
-          }
-        >
+    <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={[styles.centered, { paddingBottom: tabBarClearance }]}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={CHECKIN_RED} />
+        }
+      >
+        <View style={styles.card}>
           <View style={styles.qrWrap}>
             {token ? (
               <QRCode value={token} size={220} backgroundColor={colors.surface} />
@@ -193,77 +169,23 @@ export function CheckInQRScreen() {
           </View>
           <Text style={styles.subtitle}>Show this to staff</Text>
           <Text style={styles.rotateHint}>Refreshes in {formatCountdown(secondsLeft)}</Text>
-        </ScrollView>
-      </View>
-
-      <View style={styles.footerDots}>
-        <View style={styles.footerDot} />
-        <View style={styles.footerDot} />
-      </View>
-    </LinearGradient>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  shell: {
-    flex: 1,
-    backgroundColor: device.shell,
-    paddingTop: spacing.lg,
-    paddingHorizontal: spacing.md,
-  },
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.sm,
-  },
-  lensGroup: { flexDirection: "row", alignItems: "center" },
-  lens: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginRight: spacing.sm,
-    borderWidth: 2,
-    borderColor: "rgba(0,0,0,0.15)",
-  },
-  lensTeal: { backgroundColor: device.lensTeal, width: 20, height: 20, borderRadius: 10 },
-  lensAmber: { backgroundColor: device.lensAmber },
-  readout: {
-    backgroundColor: device.readoutBg,
-    borderRadius: 6,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-  },
-  readoutText: {
-    fontFamily: "monospace",
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: 1,
-    color: device.readoutText,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "800",
-    letterSpacing: 2,
-    color: device.caseText,
-    marginBottom: spacing.sm,
-  },
-  seam: {
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: device.shellDark,
-    marginBottom: spacing.sm,
-    opacity: 0.6,
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    borderRadius: 18,
-    borderWidth: 6,
-    borderColor: device.bezel,
-    overflow: "hidden",
-  },
+  container: { flex: 1, backgroundColor: colors.background },
   centered: { flexGrow: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    borderWidth: 6,
+    borderColor: BEZEL,
+    padding: spacing.xl,
+    alignItems: "center",
+  },
   qrWrap: {
     backgroundColor: colors.surface,
     padding: spacing.lg,
@@ -283,19 +205,5 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 13,
     fontFamily: "monospace",
-  },
-  footerDots: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  footerDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: device.shellDark,
-    marginHorizontal: 4,
-    opacity: 0.7,
   },
 });

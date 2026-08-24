@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "@/lib/supabase";
-import { colors, spacing, TAB_BAR_CLEARANCE } from "@/theme/colors";
+import { colors, spacing } from "@/theme/colors";
+import { useTabBarClearance } from "@/hooks/useTabBarClearance";
 import { CharacterCard } from "@/components/CharacterCard";
 import type { FoodlingCharacter, Restaurant, UserRestaurantProgress } from "@/types/database";
 
@@ -13,22 +13,7 @@ type Row = {
   progress: UserRestaurantProgress | null;
 };
 
-// Local-only palette for the Foodlingdex "device" chrome — a retro red
-// handheld-scanner look. Deliberately scoped to this screen rather than
-// added to the shared theme, since the rest of the app stays on the warm
-// cream design system.
-const device = {
-  shellLight: "#EE4A3E",
-  shell: "#D8342B",
-  shellDark: "#9C231C",
-  bezel: "#262A2E",
-  bezelHighlight: "#3B4046",
-  lensTeal: "#2FBFAE",
-  lensAmber: "#F5C518",
-  readoutBg: "#3B4046",
-  readoutText: "#EAF6F3",
-  caseText: "#FFF3EF",
-};
+const COLLECTION_RED = "#D8342B";
 
 /**
  * "Foodlingdex" — grid of collected characters across partner restaurants.
@@ -36,11 +21,10 @@ const device = {
  * user_restaurant_progress row exists) are shown as cards; everything
  * else stays hidden rather than appearing as a locked "???" tile, so the
  * dex reads as a growing collection rather than a checklist of unknowns.
- * The status readout still tracks collected-vs-total so there's a sense
- * of how much is left to discover.
  */
 export function CollectionScreen() {
   const navigation = useNavigation<any>();
+  const tabBarClearance = useTabBarClearance();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -120,157 +104,70 @@ export function CollectionScreen() {
   }, [userId, load]);
 
   const collectedRows = rows.filter((r) => r.progress);
-  const collectedCount = collectedRows.length;
 
   if (loading) {
     return (
-      <View style={styles.shell}>
-        <View style={styles.centered}>
-          <ActivityIndicator color={device.caseText} />
-        </View>
+      <View style={styles.centered}>
+        <ActivityIndicator color={COLLECTION_RED} />
       </View>
     );
   }
 
   return (
-    <LinearGradient colors={[device.shellLight, device.shell]} style={styles.shell}>
-      {/* Status lights + digital readout — the "device chrome" */}
-      <View style={styles.statusRow}>
-        <View style={styles.lensGroup}>
-          <View style={[styles.lens, styles.lensTeal]} />
-          <View style={[styles.lens, styles.lensAmber]} />
-        </View>
-        <View style={styles.readout}>
-          <Text style={styles.readoutText}>
-            {String(collectedCount).padStart(2, "0")} / {String(rows.length).padStart(2, "0")}
-          </Text>
-        </View>
-      </View>
-
-      <Text style={styles.title}>COLLECTION</Text>
-
-      {/* Seam line simulating the case hinge before the screen begins */}
-      <View style={styles.seam} />
-
-      {/* Inset "screen" housing the grid — ListEmptyComponent covers the
-          before-anything's-collected state, rather than a separate
-          non-scrollable View, so pull-to-refresh still works either way. */}
-      <View style={styles.screen}>
-        <FlatList
-          data={collectedRows}
-          keyExtractor={(item) => item.character.id}
-          numColumns={2}
-          contentContainerStyle={[styles.grid, { flexGrow: 1 }]}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={device.shell} />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyGlyph}>???</Text>
-              <Text style={styles.emptyText}>
-                Explore Denver food spots to add Foodlings to your collection.
-              </Text>
-            </View>
-          }
-          renderItem={({ item }) => (
-            <CharacterCard
-              name={
-                item.progress?.current_stage === 3
-                  ? item.character.name_stage3
-                  : item.progress?.current_stage === 2
-                    ? item.character.name_stage2
-                    : item.character.name_stage1
-              }
-              artUrl={
-                item.progress?.current_stage === 3
-                  ? item.character.art_url_stage3
-                  : item.progress?.current_stage === 2
-                    ? item.character.art_url_stage2
-                    : item.character.art_url_stage1
-              }
-              restaurantName={item.restaurant.name}
-              isLocked={false}
-              onPress={() =>
-                navigation.navigate("CharacterDetail", { restaurantId: item.restaurant.id })
-              }
-            />
-          )}
-        />
-      </View>
-
-      {/* A couple of small screw-style dots along the bottom edge for realism */}
-      <View style={styles.footerDots}>
-        <View style={styles.footerDot} />
-        <View style={styles.footerDot} />
-      </View>
-    </LinearGradient>
+    <View style={styles.container}>
+      {/* ListEmptyComponent covers the before-anything's-collected state,
+          rather than a separate non-scrollable View, so pull-to-refresh
+          still works either way. */}
+      <FlatList
+        style={styles.grid}
+        data={collectedRows}
+        keyExtractor={(item) => item.character.id}
+        numColumns={2}
+        contentContainerStyle={[styles.gridContent, { flexGrow: 1, paddingBottom: tabBarClearance }]}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={COLLECTION_RED} />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyGlyph}>???</Text>
+            <Text style={styles.emptyText}>
+              Explore Denver food spots to add Foodlings to your collection.
+            </Text>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <CharacterCard
+            name={
+              item.progress?.current_stage === 3
+                ? item.character.name_stage3
+                : item.progress?.current_stage === 2
+                  ? item.character.name_stage2
+                  : item.character.name_stage1
+            }
+            artUrl={
+              item.progress?.current_stage === 3
+                ? item.character.art_url_stage3
+                : item.progress?.current_stage === 2
+                  ? item.character.art_url_stage2
+                  : item.character.art_url_stage1
+            }
+            restaurantName={item.restaurant.name}
+            isLocked={false}
+            onPress={() =>
+              navigation.navigate("CharacterDetail", { restaurantId: item.restaurant.id })
+            }
+          />
+        )}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  shell: {
-    flex: 1,
-    backgroundColor: device.shell,
-    paddingTop: spacing.lg,
-    paddingHorizontal: spacing.md,
-  },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.sm,
-  },
-  lensGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  lens: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginRight: spacing.sm,
-    borderWidth: 2,
-    borderColor: "rgba(0,0,0,0.15)",
-  },
-  lensTeal: { backgroundColor: device.lensTeal, width: 20, height: 20, borderRadius: 10 },
-  lensAmber: { backgroundColor: device.lensAmber },
-  readout: {
-    backgroundColor: device.readoutBg,
-    borderRadius: 6,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-  },
-  readoutText: {
-    fontFamily: "monospace",
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: 1,
-    color: device.readoutText,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "800",
-    letterSpacing: 2,
-    color: device.caseText,
-    marginBottom: spacing.sm,
-  },
-  seam: {
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: device.shellDark,
-    marginBottom: spacing.sm,
-    opacity: 0.6,
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    borderRadius: 18,
-    borderWidth: 6,
-    borderColor: device.bezel,
-    overflow: "hidden",
-  },
-  grid: { paddingHorizontal: spacing.sm, paddingTop: spacing.sm, paddingBottom: TAB_BAR_CLEARANCE },
+  container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: spacing.md },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background },
+  grid: { flex: 1 },
+  gridContent: { paddingHorizontal: spacing.sm, paddingTop: spacing.md },
   emptyState: {
     flex: 1,
     alignItems: "center",
@@ -290,19 +187,5 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: "center",
     lineHeight: 22,
-  },
-  footerDots: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  footerDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: device.shellDark,
-    marginHorizontal: 4,
-    opacity: 0.7,
   },
 });

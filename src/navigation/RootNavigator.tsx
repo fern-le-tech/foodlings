@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { Pressable, View } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { NavigationContainer, getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
 import * as Linking from "expo-linking";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
-import { colors } from "@/theme/colors";
+import { colors, spacing, TAB_BAR_HEIGHT } from "@/theme/colors";
 
 import { OnboardingScreen } from "@/screens/OnboardingScreen";
 import { ChooseAvatarScreen } from "@/screens/ChooseAvatarScreen";
@@ -36,14 +37,27 @@ const TAB_ICONS: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = 
   Home: "fire",
   Collection: "cards",
   Directory: "map-marker-radius",
-  "Check In": "qrcode-scan",
+  "Scan to Earn": "qrcode-scan",
   Leaderboard: "trophy",
   Profile: "chef-hat",
 };
 
 const TAB_BAR_RED = "#D8342B";
 
+// Center title shown in the shared top header, keyed by tab route name —
+// keeps every screen's own page-title text out of the body since it's now
+// rendered once here instead of duplicated per-screen.
+const TAB_TITLES: Record<string, string> = {
+  Home: "HOME",
+  Collection: "COLLECTION",
+  Directory: "DIRECTORY",
+  "Scan to Earn": "SCAN TO EARN",
+  Leaderboard: "LEADERBOARD",
+  Profile: "PROFILE",
+};
+
 function MainTabs() {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -56,22 +70,30 @@ function MainTabs() {
           fontWeight: "700",
           marginTop: 2,
         },
+        // Deliberately NOT position:"absolute" — that floats the bar over
+        // scrollable content, so list items visibly slide past/behind it
+        // mid-scroll. Docking it (normal flow) makes React Navigation
+        // reserve its full footprint as real screen space instead, so
+        // nothing ever renders behind it, not even while actively
+        // scrolling. Full-width now instead of an inset rounded pill —
+        // the pill made sense when the bar hovered over content; docked,
+        // it just left a bare strip of background showing around it.
         tabBarStyle: {
-          position: "absolute",
-          left: 16,
-          right: 16,
-          bottom: 16,
-          height: 68,
-          borderRadius: 28,
+          // Height covers all the way down into the safe-area inset
+          // (gesture bar / 3-button nav) so the background has no gap
+          // below it; paddingBottom pushes the icons up above that inset
+          // instead of shrinking the bar to stop short of it.
+          height: TAB_BAR_HEIGHT + insets.bottom,
           backgroundColor: colors.surface,
-          borderTopWidth: 0,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
           paddingTop: 8,
-          paddingBottom: 8,
+          paddingBottom: 8 + insets.bottom,
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.15,
-          shadowRadius: 16,
-          elevation: 10,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 8,
+          elevation: 8,
         },
         tabBarIcon: ({ focused, color, size }) => (
           <View
@@ -96,7 +118,7 @@ function MainTabs() {
       <Tab.Screen name="Home" component={DailyDealsScreen} />
       <Tab.Screen name="Collection" component={CollectionScreen} />
       <Tab.Screen name="Directory" component={RestaurantDirectoryScreen} />
-      <Tab.Screen name="Check In" component={CheckInQRScreen} />
+      <Tab.Screen name="Scan to Earn" component={CheckInQRScreen} />
       <Tab.Screen name="Leaderboard" component={LeaderboardScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
@@ -168,10 +190,24 @@ export function RootNavigator() {
           <>
             <Stack.Screen
               name="Main"
-              options={{
-                headerShown: true,
-                title: "Foodlings",
-                headerRight: () => <InviteHeaderButton userId={session.user.id} />,
+              options={({ route }) => {
+                const focusedTab = getFocusedRouteNameFromRoute(route) ?? "Home";
+                return {
+                  headerShown: true,
+                  headerTitleAlign: "center",
+                  headerStyle: { backgroundColor: colors.surface },
+                  headerShadowVisible: false,
+                  headerLeft: () => <Text style={headerStyles.brand}>Foodlings</Text>,
+                  headerLeftContainerStyle: { paddingLeft: spacing.md },
+                  headerTitle: () => (
+                    <Text style={headerStyles.pageTitle}>{TAB_TITLES[focusedTab] ?? ""}</Text>
+                  ),
+                  // Invite is a growth/social action — only Home needs it in the
+                  // header; every other tab would just be repeating chrome.
+                  headerRight: () =>
+                    focusedTab === "Home" ? <InviteHeaderButton userId={session.user.id} /> : null,
+                  headerRightContainerStyle: { paddingRight: spacing.md },
+                };
               }}
             >
               {() => <MainTabsHeaderHost userId={session.user.id} />}
@@ -179,7 +215,14 @@ export function RootNavigator() {
             <Stack.Screen
               name="CharacterDetail"
               component={CharacterDetailScreen}
-              options={{ headerShown: true, title: "" }}
+              options={{
+                headerShown: true,
+                title: "",
+                headerTitleAlign: "center",
+                headerTitleStyle: { fontWeight: "800", color: "#000000" },
+                headerStyle: { backgroundColor: colors.surface },
+                headerShadowVisible: false,
+              }}
             />
             <Stack.Screen
               name="PublicProfile"
@@ -217,6 +260,21 @@ export function RootNavigator() {
 // modal that actually lives inside MainTabsHeaderHost. This avoids lifting
 // modal state all the way up to RootNavigator just for one button.
 let openInviteModalRef: (() => void) | null = null;
+
+const headerStyles = StyleSheet.create({
+  brand: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: TAB_BAR_RED,
+    letterSpacing: 0.2,
+  },
+  pageTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+    color: "#000000",
+  },
+});
 
 function InviteHeaderButton({ userId }: { userId: string }) {
   return (
