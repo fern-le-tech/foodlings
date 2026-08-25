@@ -35,6 +35,18 @@ interface ProgressRow {
 // elsewhere in the app (see the semantic-color note in theme/colors.ts).
 const DIRECTORY_RED = "#D8342B";
 
+// Directory's medallion deliberately does NOT reuse banner_url (the same
+// photo shown on Home/deal cards) — a stand-in "logo" badge instead, so
+// this list doesn't read as a second copy of the deal carousel. Picked
+// deterministically per restaurant id so it's stable across reloads
+// without needing a real logo asset.
+const LOGO_COLORS = ["#B5651D", "#3F8F6B", "#8C5E3C", "#5B7C99", "#A6693C", "#6B7F45", "#9C5B6B", "#4F7F73"];
+function logoColorFor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return LOGO_COLORS[hash % LOGO_COLORS.length];
+}
+
 export function RestaurantDirectoryScreen() {
   const navigation = useNavigation<any>();
   const tabBarClearance = useTabBarClearance();
@@ -186,16 +198,8 @@ export function RestaurantDirectoryScreen() {
               style={[styles.row, index % 2 === 1 ? styles.rowAlt : null]}
               onPress={() => navigation.navigate("CharacterDetail", { restaurantId: item.id })}
             >
-              <View style={styles.medallion}>
-                {item.banner_url ? (
-                  <Image source={{ uri: item.banner_url }} style={styles.medallionPhoto} resizeMode="cover" />
-                ) : (
-                  <Image
-                    source={require("../../assets/adaptive-icon-v2.png")}
-                    style={styles.medallionMark}
-                    resizeMode="contain"
-                  />
-                )}
+              <View style={[styles.medallion, { backgroundColor: logoColorFor(item.id) }]}>
+                <Text style={styles.medallionInitial}>{item.name.charAt(0).toUpperCase()}</Text>
               </View>
 
               <View style={styles.rowTextCol}>
@@ -294,19 +298,14 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: DIRECTORY_RED,
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,
-    overflow: "hidden",
   },
-  medallionPhoto: {
-    width: "100%",
-    height: "100%",
-  },
-  medallionMark: {
-    width: 32,
-    height: 32,
+  medallionInitial: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#FFFFFF",
   },
   rowTextCol: {
     flex: 1,
