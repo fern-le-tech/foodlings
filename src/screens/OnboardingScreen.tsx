@@ -48,6 +48,7 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [resetCode, setResetCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -55,20 +56,26 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
+    if (mode === "signUp" && password !== confirmPassword) {
+      Alert.alert("Passwords don't match", "Double-check your password and confirmation match.");
+      return;
+    }
     setBusy(true);
     try {
       if (mode === "signUp") {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { display_name: displayName || "New Trainer" } },
+          options: {
+            data: { display_name: displayName || "New Trainer" },
+            emailRedirectTo: "foodlings://confirmed",
+          },
         });
         if (error) throw error;
         if (!data.session) {
           Alert.alert(
             "Check your email",
-            "Your account was created, but you need to confirm your email before logging in. " +
-              "(If you're testing and don't want this step, turn off \"Confirm email\" in Supabase → Authentication → Providers.)"
+            "We sent a confirmation link to " + email + " — tap it to activate your account and jump back in."
           );
         } else {
           onSignUpSuccess?.();
@@ -244,6 +251,17 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
           <Text style={styles.showHideLabel}>{passwordVisible ? "Hide" : "Show"}</Text>
         </Pressable>
       </View>
+
+      {mode === "signUp" && (
+        <TextInput
+          style={styles.input}
+          placeholder="Confirm password"
+          placeholderTextColor={colors.textDisabled}
+          secureTextEntry={!passwordVisible}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+        />
+      )}
 
       {mode === "signIn" && (
         <Pressable onPress={() => setMode("resetRequest")} style={styles.forgotWrap}>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { NavigationContainer, getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -164,6 +164,54 @@ export function RootNavigator() {
       setSession(newSession);
     });
     return () => listener.subscription.unsubscribe();
+  }, []);
+
+  // Handles the foodlings://confirmed link from the sign-up confirmation
+  // email (see OnboardingScreen's emailRedirectTo and
+  // supabase/config.toml's site_url). detectSessionInUrl is off in
+  // lib/supabase.ts — there's no window.location for the client to read on
+  // native — so the session has to be pulled out of the URL and established
+  // manually here. Supabase can hand back either fragment tokens (implicit
+  // flow) or a `code` param (PKCE); handled defensively since either is
+  // possible depending on project auth settings.
+  useEffect(() => {
+    const handleUrl = async (url: string) => {
+      if (!url.includes("confirmed")) return;
+
+      const hash = url.split("#")[1];
+      const query = url.split("?")[1]?.split("#")[0];
+      const hashParams = hash ? new URLSearchParams(hash) : null;
+      const queryParams = query ? new URLSearchParams(query) : null;
+
+      const accessToken = hashParams?.get("access_token");
+      const refreshToken = hashParams?.get("refresh_token");
+      const code = queryParams?.get("code");
+      const type = hashParams?.get("type") ?? queryParams?.get("type");
+
+      const { error } =
+        accessToken && refreshToken
+          ? await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+          : code
+            ? await supabase.auth.exchangeCodeForSession(code)
+            : { error: new Error("No session tokens in confirmation link") };
+
+      if (error) return;
+
+      // New sign-ups skip straight to Main otherwise, since confirmation
+      // happens later via this link rather than through OnboardingScreen's
+      // onSignUpSuccess — route them through the same first-time flow a
+      // same-session sign-up would get instead.
+      if (type === "signup") {
+        setAwaitingAvatarChoice(true);
+      }
+      Alert.alert("Email confirmed!", "You're all set — welcome to Foodlings.");
+    };
+
+    Linking.getInitialURL().then((url) => {
+      if (url) handleUrl(url);
+    });
+    const subscription = Linking.addEventListener("url", ({ url }) => handleUrl(url));
+    return () => subscription.remove();
   }, []);
 
   if (!ready || !iconFontLoaded) return null; // could swap in a splash/loading component

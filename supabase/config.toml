@@ -10,12 +10,20 @@
 # exactly that reason -- don't remove fields from this file without
 # checking a `config push` diff first.
 [auth]
-site_url = "http://localhost:3000"
-additional_redirect_urls = []
+# Was "http://localhost:3000" (a dead dev placeholder) -- now the app's own
+# deep link scheme, so the confirmation email's link opens the app directly
+# instead of a browser pointed nowhere. RootNavigator.tsx listens for this
+# URL, establishes the session, and shows an in-app confirmation notice.
+site_url = "foodlings://confirmed"
+additional_redirect_urls = ["foodlings://**"]
 
 [auth.email]
 max_frequency = "1m0s"
 otp_length = 8
+# Was implicitly false (unset) -- new sign-ups must now click the emailed
+# confirmation link before they can log in. See OnboardingScreen.tsx's
+# `if (!data.session)` branch, which already handled this case.
+enable_confirmations = true
 
 [auth.mfa.totp]
 enroll_enabled = true
@@ -28,6 +36,10 @@ verify_enabled = true
 [auth.email.template.recovery]
 subject = "Reset your Foodlings password"
 content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.confirmation]
+subject = "Confirm your Foodlings account"
+content_path = "./supabase/templates/confirmation.html"
 
 # CLI default is `true`, which requires a paid tier and made the previous
 # push fail outright at this step (after the [auth] section had already
