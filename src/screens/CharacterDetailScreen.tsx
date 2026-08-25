@@ -606,6 +606,23 @@ export function CharacterDetailScreen() {
                 </View>
               )}
 
+              <Text style={styles.sectionLabel}>Address</Text>
+              <Pressable style={styles.addressCard} onPress={openInMaps}>
+                <View style={styles.addressCardIconWrap}>
+                  <MaterialCommunityIcons name="map-marker" size={20} color="#FFFFFF" />
+                </View>
+                <View style={styles.addressCardTextCol}>
+                  <Text style={styles.addressCardText} numberOfLines={2}>
+                    {restaurant.address ? `${restaurant.address}` : restaurant.name}
+                  </Text>
+                  <Text style={styles.addressCardCity}>{restaurant.city}</Text>
+                </View>
+                <View style={styles.addressCardCta}>
+                  <Text style={styles.addressCardCtaLabel}>Open in Maps</Text>
+                  <MaterialCommunityIcons name="chevron-right" size={18} color={ACCENT_RED} />
+                </View>
+              </Pressable>
+
               {activeDeal && (
                 <>
                   <Text style={styles.sectionLabel}>Today's Deal</Text>
@@ -658,23 +675,6 @@ export function CharacterDetailScreen() {
                   </View>
                 </>
               )}
-
-              <Text style={styles.sectionLabel}>Address</Text>
-              <Pressable style={styles.addressCard} onPress={openInMaps}>
-                <View style={styles.addressCardIconWrap}>
-                  <MaterialCommunityIcons name="map-marker" size={20} color="#FFFFFF" />
-                </View>
-                <View style={styles.addressCardTextCol}>
-                  <Text style={styles.addressCardText} numberOfLines={2}>
-                    {restaurant.address ? `${restaurant.address}` : restaurant.name}
-                  </Text>
-                  <Text style={styles.addressCardCity}>{restaurant.city}</Text>
-                </View>
-                <View style={styles.addressCardCta}>
-                  <Text style={styles.addressCardCtaLabel}>Open in Maps</Text>
-                  <MaterialCommunityIcons name="chevron-right" size={18} color={ACCENT_RED} />
-                </View>
-              </Pressable>
             </View>
           ) : tab === "rewards" ? (
             <View style={styles.rewardsBlock}>

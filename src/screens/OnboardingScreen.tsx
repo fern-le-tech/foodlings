@@ -15,6 +15,11 @@ import { colors, spacing, radii } from "@/theme/colors";
 const STAFF_PORTAL_URL: string | undefined =
   Constants.expoConfig?.extra?.staffPortalUrl ?? process.env.EXPO_PUBLIC_STAFF_PORTAL_URL;
 
+// Same red used for the "Foodlings" wordmark in the main app header —
+// keeps the brand mark consistent instead of rendering it in plain body
+// text color only here on the sign-in/sign-up screen.
+const BRAND_RED = "#D8342B";
+
 interface Props {
   // Fired right after a brand-new account is created (not on sign-in), so
   // RootNavigator can route to the one-time avatar-choice screen instead of
@@ -204,7 +209,7 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Foodlings</Text>
+      <Text style={styles.brandTitle}>Foodlings</Text>
       <Text style={styles.subtitle}>Collect Denver, one meal at a time.</Text>
 
       {mode === "signUp" && (
@@ -252,7 +257,8 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
 
       <Pressable onPress={() => setMode(mode === "signUp" ? "signIn" : "signUp")}>
         <Text style={styles.switchLabel}>
-          {mode === "signUp" ? "Already have an account? Log in" : "New here? Create an account"}
+          {mode === "signUp" ? "Already have an account? " : "New here? "}
+          <Text style={styles.switchLabelAction}>{mode === "signUp" ? "Log in" : "Create an account"}</Text>
         </Text>
       </Pressable>
 
@@ -268,6 +274,7 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, justifyContent: "center", padding: spacing.lg },
   title: { fontSize: 32, fontWeight: "800", color: colors.textPrimary, textAlign: "center" },
+  brandTitle: { fontSize: 32, fontWeight: "800", color: BRAND_RED, textAlign: "center" },
   subtitle: {
     fontSize: 14,
     color: colors.textSecondary,
@@ -321,4 +328,5 @@ const styles = StyleSheet.create({
   },
   buttonLabel: { color: colors.surface, fontWeight: "700" },
   switchLabel: { color: colors.textSecondary, textAlign: "center", marginTop: spacing.md, fontSize: 13 },
+  switchLabelAction: { color: BRAND_RED, fontWeight: "700" },
 });
