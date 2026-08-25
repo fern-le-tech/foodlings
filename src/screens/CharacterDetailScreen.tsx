@@ -12,6 +12,7 @@ import {
   Alert,
   Modal,
   RefreshControl,
+  useWindowDimensions,
 } from "react-native";
 import { useRoute, useNavigation, useFocusEffect } from "@react-navigation/native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -69,6 +70,11 @@ export function CharacterDetailScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { restaurantId } = route.params as { restaurantId: string };
+  // Matches Home's Top Deals card sizing exactly (~1/3 of screen height) so
+  // a deal photo crops the same way in both places instead of getting cut
+  // much tighter here under a fixed, much shorter height.
+  const { height: windowHeight } = useWindowDimensions();
+  const dealImageHeight = windowHeight * 0.28;
 
   const [tab, setTab] = useState<Tab>("about");
   const [loading, setLoading] = useState(true);
@@ -627,7 +633,11 @@ export function CharacterDetailScreen() {
                 <>
                   <Text style={styles.sectionLabel}>Today's Deal</Text>
                   <Pressable style={styles.dealCard} onPress={() => setDealModalVisible(true)}>
-                    <Image source={{ uri: activeDeal.photo_url }} style={styles.dealCardImage} resizeMode="cover" />
+                    <Image
+                      source={{ uri: activeDeal.photo_url }}
+                      style={[styles.dealCardImage, { height: dealImageHeight }]}
+                      resizeMode="cover"
+                    />
                     <View style={styles.dealCardTimerBadge}>
                       <MaterialCommunityIcons name="clock-outline" size={12} color="#FFFFFF" />
                       <Text style={styles.dealCardTimerText}>{formatTimeRemaining(activeDeal.expires_at)}</Text>
@@ -1059,7 +1069,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  dealCardImage: { width: "100%", height: 130, backgroundColor: colors.surfaceMuted },
+  dealCardImage: { width: "100%", backgroundColor: colors.surfaceMuted },
   dealCardTimerBadge: {
     position: "absolute",
     top: spacing.sm,
