@@ -185,6 +185,7 @@ const emptyPartnerForm = {
   cuisine_type: "",
   signature_dish: "",
   banner_url: "",
+  logo_url: "",
   bio: "",
   instagram_handle: "",
   facebook_handle: "",
@@ -226,6 +227,7 @@ function NewPartnerPanel({ onCreated }) {
         cuisine_type: form.cuisine_type || null,
         signature_dish: form.signature_dish || null,
         banner_url: form.banner_url || null,
+        logo_url: form.logo_url || null,
         bio: form.bio || null,
         instagram_handle: form.instagram_handle || null,
         facebook_handle: form.facebook_handle || null,
@@ -290,6 +292,11 @@ function NewPartnerPanel({ onCreated }) {
         placeholder="Banner photo URL (shown on Home > Restaurants Near You)"
         value={form.banner_url}
         onChange={set("banner_url")}
+      />
+      <input
+        placeholder="Logo URL (shown in the Directory list)"
+        value={form.logo_url}
+        onChange={set("logo_url")}
       />
       <textarea
         placeholder="Bio (shown on the character page's About tab, e.g. 'A vibrant Mexican restaurant in RiNo known for its tacos and margaritas.')"
@@ -466,6 +473,7 @@ function PartnerEditForm({ restaurant, character, onSaved }) {
     cuisine_type: restaurant.cuisine_type ?? "",
     signature_dish: restaurant.signature_dish ?? "",
     banner_url: restaurant.banner_url ?? "",
+    logo_url: restaurant.logo_url ?? "",
     instagram_handle: restaurant.instagram_handle ?? "",
     facebook_handle: restaurant.facebook_handle ?? "",
     partner_status: restaurant.partner_status ?? "active",
@@ -498,6 +506,7 @@ function PartnerEditForm({ restaurant, character, onSaved }) {
         cuisine_type: form.cuisine_type || null,
         signature_dish: form.signature_dish || null,
         banner_url: form.banner_url || null,
+        logo_url: form.logo_url || null,
         instagram_handle: form.instagram_handle || null,
         facebook_handle: form.facebook_handle || null,
         partner_status: form.partner_status,
@@ -562,6 +571,11 @@ function PartnerEditForm({ restaurant, character, onSaved }) {
         placeholder="Banner photo URL (shown on Home > Restaurants Near You)"
         value={form.banner_url}
         onChange={set("banner_url")}
+      />
+      <input
+        placeholder="Logo URL (shown in the Directory list)"
+        value={form.logo_url}
+        onChange={set("logo_url")}
       />
       <input
         placeholder="Instagram handle (without @)"

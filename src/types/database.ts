@@ -39,6 +39,7 @@ export type Restaurant = {
   partner_status: PartnerStatus;
   created_at: string;
   banner_url: string | null;
+  logo_url: string | null;
   bio: string | null;
   instagram_handle: string | null;
   facebook_handle: string | null;

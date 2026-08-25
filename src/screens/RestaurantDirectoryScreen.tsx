@@ -198,9 +198,15 @@ export function RestaurantDirectoryScreen() {
               style={[styles.row, index % 2 === 1 ? styles.rowAlt : null]}
               onPress={() => navigation.navigate("CharacterDetail", { restaurantId: item.id })}
             >
-              <View style={[styles.medallion, { backgroundColor: logoColorFor(item.id) }]}>
-                <Text style={styles.medallionInitial}>{item.name.charAt(0).toUpperCase()}</Text>
-              </View>
+              {item.logo_url ? (
+                <View style={styles.medallion}>
+                  <Image source={{ uri: item.logo_url }} style={styles.medallionLogo} resizeMode="cover" />
+                </View>
+              ) : (
+                <View style={[styles.medallion, { backgroundColor: logoColorFor(item.id) }]}>
+                  <Text style={styles.medallionInitial}>{item.name.charAt(0).toUpperCase()}</Text>
+                </View>
+              )}
 
               <View style={styles.rowTextCol}>
                 <Text style={styles.name}>{item.name}</Text>
@@ -301,6 +307,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.md,
+    overflow: "hidden",
+  },
+  medallionLogo: {
+    width: "100%",
+    height: "100%",
   },
   medallionInitial: {
     fontSize: 22,
