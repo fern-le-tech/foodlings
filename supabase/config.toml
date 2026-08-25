@@ -19,7 +19,11 @@ additional_redirect_urls = ["foodlings://**"]
 
 [auth.email]
 max_frequency = "1m0s"
-otp_length = 8
+# Was 8 -- the reset-password screen's UI explicitly says "6-digit code"
+# (see OnboardingScreen.tsx's resetConfirm placeholder), so the emailed
+# code needs to actually be 6 digits to match what it tells people to
+# expect.
+otp_length = 6
 # REVERTED 2026-08-25: turning this on immediately broke all sign-ups --
 # Supabase's built-in email sender (no custom SMTP configured) failed
 # outright with "Error sending confirmation email" (500) on every signup

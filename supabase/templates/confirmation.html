@@ -3,28 +3,53 @@
   the account and deep-links straight back into the app (foodlings://confirmed,
   see RootNavigator.tsx's Linking listener), which then shows an in-app
   "Email confirmed!" notice.
+
+  color-scheme/supported-color-schemes below stop Gmail (and other
+  dark-mode-aware clients) from auto-inverting this into a black/dark
+  render — without them, the cream background and dark text get flipped
+  to something that never matches the app's actual palette. bgcolor
+  attributes are a belt-and-suspenders fallback for clients that ignore
+  inline background-color under forced dark mode.
 -->
-<div style="background-color:#FBF3E7; padding:32px 16px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<style>
+  :root { color-scheme: light; supported-color-schemes: light; }
+  body, .fl-bg { background-color: #FBF3E7 !important; }
+  .fl-card { background-color: #FFFFFF !important; }
+  .fl-eyebrow { color: #D8342B !important; }
+  .fl-heading { color: #2B2320 !important; }
+  .fl-body { color: #7A6F63 !important; }
+  .fl-footnote { color: #B8AEA0 !important; }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#FBF3E7;">
+<div class="fl-bg" style="background-color:#FBF3E7; padding:32px 16px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:420px; margin:0 auto;">
     <tr>
-      <td style="background-color:#FFFFFF; border:1px solid #EAE0D2; border-radius:16px; padding:32px 28px; text-align:center;">
-        <p style="margin:0 0 4px; font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#D8342B;">
+      <td class="fl-card" bgcolor="#FFFFFF" style="background-color:#FFFFFF; border:1px solid #EAE0D2; border-radius:16px; padding:32px 28px; text-align:center;">
+        <p class="fl-eyebrow" style="margin:0 0 4px; font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#D8342B;">
           Foodlings
         </p>
-        <h1 style="margin:0 0 16px; font-size:20px; color:#2B2320;">
+        <h1 class="fl-heading" style="margin:0 0 16px; font-size:20px; color:#2B2320;">
           Confirm your email
         </h1>
-        <p style="margin:0 0 24px; font-size:14px; line-height:1.5; color:#7A6F63;">
+        <p class="fl-body" style="margin:0 0 24px; font-size:14px; line-height:1.5; color:#7A6F63;">
           Tap the button below to confirm your account and jump back into the app.
         </p>
         <a href="{{ .ConfirmationURL }}"
            style="display:inline-block; background-color:#D8342B; color:#FFFFFF; text-decoration:none; font-size:15px; font-weight:700; padding:14px 32px; border-radius:999px;">
           Confirm email
         </a>
-        <p style="margin:24px 0 0; font-size:12px; line-height:1.5; color:#B8AEA0;">
+        <p class="fl-footnote" style="margin:24px 0 0; font-size:12px; line-height:1.5; color:#B8AEA0;">
           Didn't create a Foodlings account? You can safely ignore this email.
         </p>
       </td>
     </tr>
   </table>
 </div>
+</body>
+</html>
