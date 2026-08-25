@@ -59,51 +59,51 @@ export const AVATAR_OPTIONS = [
   {
     id: "bacon",
     label: "Bacon",
-    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162805_714f9246-6c45-46d8-8ee3-cfe16dc9489e.png",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_181435_63042ec6-0ee1-4489-96c9-8dc70b6f21d2.png",
   },
   {
     id: "soda",
     label: "Soda",
-    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162805_4fb6518f-0a76-465b-849a-d38c0fe49489.png",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_181435_4de6c926-fea2-4931-8943-1ee9e378a5be.png",
   },
   {
     id: "waffle",
     label: "Waffle",
-    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162805_bed8be53-8020-469e-ad74-09b4c758d974.png",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_181435_ca5ec672-5a36-4afc-9f84-ebcbd4a711c1.png",
   },
   {
     id: "popcorn",
     label: "Popcorn",
-    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162805_18c232b7-3a84-4336-83a0-2095dac80359.png",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_181435_c1e4df99-9587-4dd7-a461-bd3df3be8f16.png",
   },
   {
     id: "ramen",
     label: "Ramen",
-    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162805_7e237402-a27e-4258-ab0a-1e8a48948d4f.png",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_181435_37138073-2e44-4b7d-be61-e9ed2e59cb9f.png",
   },
   {
     id: "pretzel",
     label: "Pretzel",
-    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162804_737d971d-ee90-4d47-b0cc-b9597679a9cf.png",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_181435_a6916ac1-4522-4e8b-ac5e-0b692c6b99bb.png",
   },
   {
     id: "watermelon",
     label: "Watermelon",
-    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162805_4745064e-5f80-450b-9eea-cc89b8406519.png",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_181435_81032471-8b9d-4655-9e94-a23b2c1309cb.png",
   },
   {
     id: "croissant",
     label: "Croissant",
-    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162805_f48c5ef3-fd14-4482-b316-09dbb195ea9c.png",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_181435_d808bf78-6e9a-4129-96ad-a5e53388a7fc.png",
   },
   {
     id: "boba",
     label: "Boba tea",
-    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162804_0b5a8e33-cf3d-4720-9a01-193855cf4b2f.png",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_181435_3c0af6d6-e842-4d9b-94a3-4b9d8c3a5397.png",
   },
   {
     id: "cookie",
     label: "Cookie",
-    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_163229_5d19e415-3aaa-4aa6-b290-fbfdf32a37da.png",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_181435_e65d7136-4757-4a74-8c70-5bd2b0405a10.png",
   },
 ] as const;
