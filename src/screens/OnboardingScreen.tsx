@@ -11,6 +11,7 @@ import {
   ScrollView,
   Platform,
 } from "react-native";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import Constants from "expo-constants";
 import { supabase } from "@/lib/supabase";
 import { colors, spacing, radii } from "@/theme/colors";
@@ -285,14 +286,19 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
       </View>
 
       {mode === "signUp" && (
-        <TextInput
-          style={styles.input}
-          placeholder="Confirm password"
-          placeholderTextColor={colors.textDisabled}
-          secureTextEntry={!passwordVisible}
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-        />
+        <View style={styles.passwordRow}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Confirm password"
+            placeholderTextColor={colors.textDisabled}
+            secureTextEntry={!passwordVisible}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
+          {confirmPassword.length > 0 && confirmPassword === password && (
+            <MaterialCommunityIcons name="check-circle" size={20} color={colors.accentReward} />
+          )}
+        </View>
       )}
 
       {mode === "signIn" && (
