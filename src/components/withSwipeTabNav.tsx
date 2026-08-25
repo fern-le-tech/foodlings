@@ -1,11 +1,13 @@
-import { useMemo, ComponentType } from "react";
-import { View, PanResponder } from "react-native";
+import { ComponentType } from "react";
+import { View } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useNavigation } from "@react-navigation/native";
 
 // Bottom tabs aren't swipeable by default (that's a top-tabs pattern) — this
-// adds it via PanResponder rather than pulling in react-native-gesture-handler
-// (not an existing dependency, and would mean a bigger native-module change
-// for what's otherwise a pure-JS gesture). Home is deliberately left out of
+// adds it via react-native-gesture-handler, which recognizes the gesture on
+// the native UI thread instead of the JS thread (unlike the PanResponder
+// version this replaced, which felt laggy competing with each screen's own
+// FlatList/ScrollView for JS thread time). Home is deliberately left out of
 // TAB_ORDER — its own deal carousel already owns horizontal swipe, and
 // layering a tab-switch gesture on top of that would fight it.
 const TAB_ORDER = ["Collection", "Directory", "Scan to Earn", "Leaderboard", "Profile"];
@@ -18,29 +20,29 @@ export function withSwipeTabNav<P extends object>(Component: ComponentType<P>, t
     const navigation = useNavigation<any>();
     const index = TAB_ORDER.indexOf(tabName);
 
-    const panResponder = useMemo(
-      () =>
-        PanResponder.create({
-          // Capture only once the gesture is decisively horizontal — lets
-          // each screen's own vertical scrolling (FlatList/ScrollView) pass
-          // through untouched for the far more common up/down drag.
-          onMoveShouldSetPanResponderCapture: (_evt, gesture) =>
-            Math.abs(gesture.dx) > 24 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 2,
-          onPanResponderRelease: (_evt, gesture) => {
-            if (gesture.dx < -50 && index < TAB_ORDER.length - 1) {
-              navigation.navigate(TAB_ORDER[index + 1]);
-            } else if (gesture.dx > 50 && index > 0) {
-              navigation.navigate(TAB_ORDER[index - 1]);
-            }
-          },
-        }),
-      [index, navigation]
-    );
+    const goTo = (targetIndex: number) => {
+      if (targetIndex >= 0 && targetIndex < TAB_ORDER.length) {
+        navigation.navigate(TAB_ORDER[targetIndex]);
+      }
+    };
+
+    const pan = Gesture.Pan()
+      // Only steals the gesture once it's decisively horizontal — lets each
+      // screen's own vertical scrolling pass through untouched for the far
+      // more common up/down drag.
+      .activeOffsetX([-20, 20])
+      .failOffsetY([-15, 15])
+      .onEnd((e) => {
+        if (e.translationX < -50) goTo(index + 1);
+        else if (e.translationX > 50) goTo(index - 1);
+      });
 
     return (
-      <View style={{ flex: 1 }} {...panResponder.panHandlers}>
-        <Component {...props} />
-      </View>
+      <GestureDetector gesture={pan}>
+        <View style={{ flex: 1 }}>
+          <Component {...props} />
+        </View>
+      </GestureDetector>
     );
   };
 }
