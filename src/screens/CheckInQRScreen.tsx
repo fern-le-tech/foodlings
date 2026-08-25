@@ -167,7 +167,7 @@ export function CheckInQRScreen() {
               <Text style={styles.loading}>Loading code…</Text>
             )}
           </View>
-          <Text style={styles.subtitle}>Show this to staff</Text>
+          <Text style={styles.subtitle}>Show this to staff at checkout</Text>
           <Text style={styles.rotateHint}>Refreshes in {formatCountdown(secondsLeft)}</Text>
         </View>
       </ScrollView>
