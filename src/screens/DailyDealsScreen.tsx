@@ -21,6 +21,7 @@ import * as Location from "expo-location";
 import { supabase } from "@/lib/supabase";
 import { colors, spacing, radii } from "@/theme/colors";
 import { useTabBarClearance } from "@/hooks/useTabBarClearance";
+import { restaurantsCache, charactersCache } from "@/lib/prefetchCache";
 
 // Home breaks from the red family used on Directory/Leaderboard/Collection —
 // it's the first screen people land on, so it gets its own identity: a
@@ -137,6 +138,10 @@ export function DailyDealsScreen() {
   const [nearbyStatus, setNearbyStatus] = useState<NearbyStatus>("idle");
 
   const listRef = useRef<FlatList<DealRow>>(null);
+  // Consumed once — the splash-time prefetch cache speeds up only the very
+  // first loadNearby call (right after the app opens); every later refocus
+  // fetches live as before so "near you" never goes permanently stale.
+  const usedNearbyCacheRef = useRef(false);
 
   const loadDeals = useCallback(async () => {
     const {
@@ -220,18 +225,25 @@ export function DailyDealsScreen() {
         accuracy: Location.Accuracy.Balanced,
       });
 
+      const canUseCache = !usedNearbyCacheRef.current && restaurantsCache && charactersCache;
+      if (canUseCache) usedNearbyCacheRef.current = true;
+
       const [{ data: restaurantData }, { data: characterData }, {
         data: { user },
       }] = await Promise.all([
-        supabase
-          .from("restaurants")
-          .select("id, name, neighborhood, cuisine_type, lat, lng, banner_url")
-          .eq("partner_status", "active")
-          .not("lat", "is", null)
-          .not("lng", "is", null),
-        supabase
-          .from("foodling_characters")
-          .select("restaurant_id, art_url_stage1, art_url_stage2, art_url_stage3"),
+        canUseCache
+          ? Promise.resolve({ data: restaurantsCache!.filter((r) => r.lat != null && r.lng != null) })
+          : supabase
+              .from("restaurants")
+              .select("id, name, neighborhood, cuisine_type, lat, lng, banner_url")
+              .eq("partner_status", "active")
+              .not("lat", "is", null)
+              .not("lng", "is", null),
+        canUseCache
+          ? Promise.resolve({ data: charactersCache })
+          : supabase
+              .from("foodling_characters")
+              .select("restaurant_id, art_url_stage1, art_url_stage2, art_url_stage3"),
         supabase.auth.getUser(),
       ]);
 

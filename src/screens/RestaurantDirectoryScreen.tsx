@@ -13,6 +13,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { supabase } from "@/lib/supabase";
 import { colors, spacing, radii } from "@/theme/colors";
 import { useTabBarClearance } from "@/hooks/useTabBarClearance";
+import { restaurantsCache, charactersCache } from "@/lib/prefetchCache";
 import type { Restaurant } from "@/types/database";
 
 interface CharacterRow {
@@ -50,14 +51,19 @@ function logoColorFor(id: string): string {
 export function RestaurantDirectoryScreen() {
   const navigation = useNavigation<any>();
   const tabBarClearance = useTabBarClearance();
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  // Seeded from the splash-time prefetch when available (see
+  // src/lib/prefetchCache.ts) so this screen paints with real restaurants
+  // on first render instead of an empty list + spinner — load() below still
+  // runs as normal right after, refreshing this and filling in the
+  // user-specific progress data the cache doesn't carry.
+  const [restaurants, setRestaurants] = useState<Restaurant[]>(() => restaurantsCache ?? []);
   const [charactersByRestaurant, setCharactersByRestaurant] = useState<Map<string, CharacterRow>>(
-    new Map()
+    () => new Map((charactersCache ?? []).map((c) => [c.restaurant_id, c]))
   );
   const [progressByRestaurant, setProgressByRestaurant] = useState<Map<string, ProgressRow>>(
     new Map()
   );
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !(restaurantsCache && charactersCache));
   const [refreshing, setRefreshing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 

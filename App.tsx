@@ -9,8 +9,13 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as SplashScreen from "expo-splash-screen";
 import { RootNavigator } from "@/navigation/RootNavigator";
 import AnimatedSplash from "@/components/AnimatedSplash";
+import { prefetchCoreData } from "@/lib/prefetchCache";
 
 SplashScreen.preventAutoHideAsync();
+
+// Module scope, not inside the component — this should fire exactly once
+// per app launch, not get re-triggered by a re-render.
+const coreDataReady = prefetchCoreData();
 
 export default function App() {
   const [showCustomSplash, setShowCustomSplash] = useState(true);
@@ -28,7 +33,7 @@ export default function App() {
         <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
           <RootNavigator />
           {showCustomSplash && (
-            <AnimatedSplash onFinish={() => setShowCustomSplash(false)} />
+            <AnimatedSplash ready={coreDataReady} onFinish={() => setShowCustomSplash(false)} />
           )}
         </View>
       </SafeAreaProvider>
