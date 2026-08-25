@@ -102,8 +102,8 @@ export const AVATAR_OPTIONS = [
     url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162804_0b5a8e33-cf3d-4720-9a01-193855cf4b2f.png",
   },
   {
-    id: "torta",
-    label: "Torta",
-    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_163316_4368b262-16d6-4b58-94f9-b12e651b1073.png",
+    id: "cookie",
+    label: "Cookie",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_163229_5d19e415-3aaa-4aa6-b290-fbfdf32a37da.png",
   },
 ] as const;
