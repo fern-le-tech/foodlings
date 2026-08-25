@@ -26,9 +26,19 @@ import { ProfileScreen } from "@/screens/ProfileScreen";
 import { PublicProfileScreen } from "@/screens/PublicProfileScreen";
 import { AcceptFriendRequestScreen } from "@/screens/AcceptFriendRequestScreen";
 import { InviteFriendsModal } from "@/components/InviteFriendsModal";
+import { withSwipeTabNav } from "@/components/withSwipeTabNav";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+// Defined once at module scope, not inline in JSX — Tab.Screen's
+// `component` prop needs a stable reference across renders, or React
+// Navigation treats it as a new screen type and remounts it.
+const SwipeableCollectionScreen = withSwipeTabNav(CollectionScreen, "Collection");
+const SwipeableDirectoryScreen = withSwipeTabNav(RestaurantDirectoryScreen, "Directory");
+const SwipeableCheckInQRScreen = withSwipeTabNav(CheckInQRScreen, "Scan to Earn");
+const SwipeableLeaderboardScreen = withSwipeTabNav(LeaderboardScreen, "Leaderboard");
+const SwipeableProfileScreen = withSwipeTabNav(ProfileScreen, "Profile");
 
 // One icon per tab, picked to feel playful and food/collection themed
 // rather than generic — MaterialCommunityIcons ships bundled with Expo
@@ -116,11 +126,11 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Home" component={DailyDealsScreen} />
-      <Tab.Screen name="Collection" component={CollectionScreen} />
-      <Tab.Screen name="Directory" component={RestaurantDirectoryScreen} />
-      <Tab.Screen name="Scan to Earn" component={CheckInQRScreen} />
-      <Tab.Screen name="Leaderboard" component={LeaderboardScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Collection" component={SwipeableCollectionScreen} />
+      <Tab.Screen name="Directory" component={SwipeableDirectoryScreen} />
+      <Tab.Screen name="Scan to Earn" component={SwipeableCheckInQRScreen} />
+      <Tab.Screen name="Leaderboard" component={SwipeableLeaderboardScreen} />
+      <Tab.Screen name="Profile" component={SwipeableProfileScreen} />
     </Tab.Navigator>
   );
 }
