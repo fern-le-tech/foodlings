@@ -20,10 +20,15 @@ additional_redirect_urls = ["foodlings://**"]
 [auth.email]
 max_frequency = "1m0s"
 otp_length = 8
-# Was implicitly false (unset) -- new sign-ups must now click the emailed
-# confirmation link before they can log in. See OnboardingScreen.tsx's
-# `if (!data.session)` branch, which already handled this case.
-enable_confirmations = true
+# REVERTED 2026-08-25: turning this on immediately broke all sign-ups --
+# Supabase's built-in email sender (no custom SMTP configured) failed
+# outright with "Error sending confirmation email" (500) on every signup
+# call, confirmed via direct curl repro against /auth/v1/signup. It's only
+# meant for light testing, not real delivery. Everything else from this
+# feature (redirect target, deep link handling, email template) stays in
+# place -- flip this back on once a real SMTP provider (Resend, SendGrid,
+# Postmark, etc.) is configured under [auth.email.smtp].
+enable_confirmations = false
 
 [auth.mfa.totp]
 enroll_enabled = true
