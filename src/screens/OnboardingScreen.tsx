@@ -1,8 +1,40 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, Alert, Linking } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  Alert,
+  Linking,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+} from "react-native";
 import Constants from "expo-constants";
 import { supabase } from "@/lib/supabase";
 import { colors, spacing, radii } from "@/theme/colors";
+
+// Plain `View` + fixed centering left the confirm-password field (and the
+// reset-code screen's fields) hidden behind the keyboard on smaller
+// screens, with no way to scroll them into view — this wraps every form
+// screen below so the keyboard pushes content up instead of covering it.
+function KeyboardAvoidingScreen({ children }: { children: React.ReactNode }) {
+  return (
+    <KeyboardAvoidingView
+      style={styles.keyboardAvoider}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {children}
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
 
 // This app and the staff portal (staff-portal/) are separate apps sharing
 // one Supabase project — the same login works on either, but each only
@@ -149,7 +181,7 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
 
   if (mode === "resetRequest") {
     return (
-      <View style={styles.container}>
+      <KeyboardAvoidingScreen>
         <Text style={styles.title}>Reset password</Text>
         <Text style={styles.subtitle}>We'll email you a 6-digit code.</Text>
 
@@ -170,13 +202,13 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
         <Pressable onPress={() => setMode("signIn")}>
           <Text style={styles.switchLabel}>Back to log in</Text>
         </Pressable>
-      </View>
+      </KeyboardAvoidingScreen>
     );
   }
 
   if (mode === "resetConfirm") {
     return (
-      <View style={styles.container}>
+      <KeyboardAvoidingScreen>
         <Text style={styles.title}>Enter your code</Text>
         <Text style={styles.subtitle}>Sent to {email}</Text>
 
@@ -210,12 +242,12 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
         <Pressable onPress={() => setMode("resetRequest")}>
           <Text style={styles.switchLabel}>Didn't get a code? Send again</Text>
         </Pressable>
-      </View>
+      </KeyboardAvoidingScreen>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen>
       <Text style={styles.brandTitle}>Foodlings</Text>
       <Text style={styles.subtitle}>Collect Denver, one meal at a time.</Text>
 
@@ -285,12 +317,16 @@ export function OnboardingScreen({ onSignUpSuccess }: Props) {
           <Text style={styles.staffLinkLabel}>Restaurant staff? Log in here</Text>
         </Pressable>
       )}
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, justifyContent: "center", padding: spacing.lg },
+  keyboardAvoider: { flex: 1, backgroundColor: colors.background },
+  // Used as a ScrollView contentContainerStyle now, not a flex View —
+  // flexGrow (not flex) still centers short content while letting it
+  // scroll normally once the keyboard or a taller form pushes past that.
+  container: { flexGrow: 1, justifyContent: "center", padding: spacing.lg },
   title: { fontSize: 32, fontWeight: "800", color: colors.textPrimary, textAlign: "center" },
   brandTitle: { fontSize: 32, fontWeight: "800", color: BRAND_RED, textAlign: "center" },
   subtitle: {

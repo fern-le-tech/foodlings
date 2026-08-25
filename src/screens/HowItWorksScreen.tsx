@@ -79,7 +79,7 @@ const SLIDES: Slide[] = [
     accent: SLIDE_ORANGE,
     title: "Collect all of Denver",
     body:
-      "Leave reviews, invite friends, and scan in at new spots to grow your collection. Climb the leaderboard as you become a true Foodlings trainer.",
+      "Leave reviews, invite friends, and scan in at new spots to grow your collection. Climb the leaderboard as you become a true Foodlings collector.",
   },
 ];
 
