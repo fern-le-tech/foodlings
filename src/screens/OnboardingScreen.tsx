@@ -23,7 +23,7 @@ function KeyboardAvoidingScreen({ children }: { children: React.ReactNode }) {
   return (
     <KeyboardAvoidingView
       style={styles.keyboardAvoider}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
         contentContainerStyle={styles.container}

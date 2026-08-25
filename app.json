@@ -17,6 +17,7 @@
     ],
     "android": {
       "package": "com.foodlings.app",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon-v2.png",
         "backgroundColor": "#D8342B"
