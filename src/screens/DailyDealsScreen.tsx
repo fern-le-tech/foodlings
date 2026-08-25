@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -332,6 +332,17 @@ export function DailyDealsScreen() {
     const index = Math.round(e.nativeEvent.contentOffset.x / width);
     if (index !== activeIndex) setActiveIndex(index);
   };
+
+  // Switching All <-> Saved swaps in a shorter (or longer) list without
+  // touching the carousel's scroll position — if it was scrolled a few
+  // cards into "All", that offset can land past the end of "Saved",
+  // rendering nothing until a manual swipe forces FlatList to re-clamp.
+  // Snapping back to the start on every toggle avoids that blank-until-you-
+  // swipe state entirely.
+  useEffect(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    setActiveIndex(0);
+  }, [viewMode]);
 
   const goToRestaurant = (deal: DealRow) => {
     setSelectedDeal(null);
