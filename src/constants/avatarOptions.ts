@@ -56,4 +56,49 @@ export const AVATAR_OPTIONS = [
     label: "Avocado",
     url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260714_060510_88631852-c724-4c81-8fa9-2087a0dd3fb6.png",
   },
+  {
+    id: "bacon",
+    label: "Bacon",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162805_714f9246-6c45-46d8-8ee3-cfe16dc9489e.png",
+  },
+  {
+    id: "soda",
+    label: "Soda",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162805_4fb6518f-0a76-465b-849a-d38c0fe49489.png",
+  },
+  {
+    id: "waffle",
+    label: "Waffle",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162805_bed8be53-8020-469e-ad74-09b4c758d974.png",
+  },
+  {
+    id: "popcorn",
+    label: "Popcorn",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162805_18c232b7-3a84-4336-83a0-2095dac80359.png",
+  },
+  {
+    id: "ramen",
+    label: "Ramen",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162805_7e237402-a27e-4258-ab0a-1e8a48948d4f.png",
+  },
+  {
+    id: "pretzel",
+    label: "Pretzel",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162804_737d971d-ee90-4d47-b0cc-b9597679a9cf.png",
+  },
+  {
+    id: "watermelon",
+    label: "Watermelon",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162805_4745064e-5f80-450b-9eea-cc89b8406519.png",
+  },
+  {
+    id: "croissant",
+    label: "Croissant",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162805_f48c5ef3-fd14-4482-b316-09dbb195ea9c.png",
+  },
+  {
+    id: "boba",
+    label: "Boba tea",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_37RwDx8ZWCINsZCJXHVnNZy8Tg5/hf_20260825_162804_0b5a8e33-cf3d-4720-9a01-193855cf4b2f.png",
+  },
 ] as const;
