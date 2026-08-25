@@ -18,6 +18,7 @@ import { getCurrentBadge, getTierColor, TIER_GOLD, TIER_SILVER, TIER_BRONZE } fr
 import type { LeaderboardRow } from "@/types/database";
 
 type SortMode = "collection_size" | "total_xp";
+type Scope = "global" | "friends";
 
 // Same red used on Directory/Collection — the header-panel treatment
 // (gradient + eyebrow + perforation divider) is deliberately reused as-is
@@ -51,6 +52,7 @@ export function LeaderboardScreen() {
   const navigation = useNavigation<any>();
   const tabBarClearance = useTabBarClearance();
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
+  const [scope, setScope] = useState<Scope>("global");
   const [sortMode, setSortMode] = useState<SortMode>("collection_size");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -63,14 +65,14 @@ export function LeaderboardScreen() {
         setLoading(true);
       }
       const { data } = await supabase
-        .rpc("friends_leaderboard")
+        .rpc(scope === "global" ? "global_leaderboard" : "friends_leaderboard")
         .order(sortMode, { ascending: false })
         .limit(50);
       setRows(data ?? []);
       setLoading(false);
       setRefreshing(false);
     },
-    [sortMode]
+    [scope, sortMode]
   );
 
   useEffect(() => {
@@ -82,6 +84,25 @@ export function LeaderboardScreen() {
 
   return (
     <View style={styles.screen}>
+      <View style={styles.toggleRow}>
+        <Pressable
+          style={[styles.toggleButton, scope === "global" && styles.toggleButtonActive]}
+          onPress={() => setScope("global")}
+        >
+          <Text style={[styles.toggleLabel, scope === "global" && styles.toggleLabelActive]}>
+            Global
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[styles.toggleButton, scope === "friends" && styles.toggleButtonActive]}
+          onPress={() => setScope("friends")}
+        >
+          <Text style={[styles.toggleLabel, scope === "friends" && styles.toggleLabelActive]}>
+            Friends
+          </Text>
+        </Pressable>
+      </View>
+
       <View style={styles.toggleRow}>
         <Pressable
           style={[styles.toggleButton, sortMode === "collection_size" && styles.toggleButtonActive]}
@@ -103,12 +124,24 @@ export function LeaderboardScreen() {
         </Pressable>
       </View>
 
+      {/* Own row always shows even with zero friends added, so the
+          rows.length === 0 empty state below never fires for a brand-new
+          account on Friends scope — without this, seeing just yourself in
+          "1st place" reads as a broken/empty leaderboard rather than an
+          explained one. */}
+      {!loading && scope === "friends" && rows.length > 0 && rows.length <= 1 && (
+        <Text style={styles.friendsHint}>
+          Only showing you and friends you've added — invite friends to see how you compare.
+        </Text>
+      )}
+
       {loading ? (
         <ActivityIndicator style={{ marginTop: spacing.lg }} color={BOARD_RED} />
       ) : rows.length === 0 ? (
         <Text style={styles.emptyText}>
-          Invite a friend to see how you stack up — the leaderboard only shows people you're
-          connected with.
+          {scope === "friends"
+            ? "Invite a friend to see how you stack up — the leaderboard only shows people you're connected with."
+            : "No one's on the board yet."}
         </Text>
       ) : (
         <FlatList
@@ -211,6 +244,14 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: "center",
     lineHeight: 20,
+  },
+  friendsHint: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 17,
   },
 
   row: {

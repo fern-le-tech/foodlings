@@ -239,6 +239,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: LeaderboardRow[];
       };
+      global_leaderboard: {
+        Args: Record<PropertyKey, never>;
+        Returns: LeaderboardRow[];
+      };
       create_pending_redemption: {
         Args: { p_reward_id: string };
         Returns: CreatePendingRedemptionResult[];
