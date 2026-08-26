@@ -1,9 +1,25 @@
-import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Modal, Pressable } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { View, Text, StyleSheet, Modal, Pressable, Animated, Easing } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import QRCode from "react-native-qrcode-svg";
 import { supabase } from "@/lib/supabase";
 import { colors, spacing, radii } from "@/theme/colors";
+
+const CONFETTI_COLORS = ["#D8342B", "#E3A008", "#3F8F6B", "#B5651D", "#9C5B6B"];
+// Precomputed once (not per-render) — each piece gets its own trajectory
+// (angle/distance/rotation/color) and a small random stagger so the burst
+// reads as organic rather than a uniform ring of identical dots.
+const CONFETTI_PIECES = Array.from({ length: 14 }, (_, i) => {
+  const angle = (Math.PI * 2 * i) / 14 + (Math.random() - 0.5) * 0.6;
+  const distance = 90 + Math.random() * 60;
+  return {
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    dx: Math.cos(angle) * distance,
+    dy: Math.sin(angle) * distance - 30,
+    rotate: (Math.random() - 0.5) * 720,
+    delay: Math.random() * 120,
+  };
+});
 
 /**
  * Shown right after a person taps "Redeem" on a reward. Points are already
@@ -30,6 +46,38 @@ export function RedeemQRScreen() {
     Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000))
   );
   const [fulfilled, setFulfilled] = useState(false);
+  const cardScale = useRef(new Animated.Value(0.4)).current;
+  const emojiScale = useRef(new Animated.Value(0)).current;
+  const confettiProgress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!fulfilled) return;
+    cardScale.setValue(0.4);
+    emojiScale.setValue(0);
+    confettiProgress.setValue(0);
+
+    Animated.sequence([
+      Animated.spring(cardScale, {
+        toValue: 1,
+        friction: 5,
+        tension: 60,
+        useNativeDriver: true,
+      }),
+      Animated.spring(emojiScale, {
+        toValue: 1,
+        friction: 4,
+        tension: 120,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    Animated.timing(confettiProgress, {
+      toValue: 1,
+      duration: 900,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [fulfilled]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -91,8 +139,43 @@ export function RedeemQRScreen() {
 
       <Modal visible={fulfilled} transparent animationType="fade">
         <View style={styles.overlay}>
-          <View style={styles.celebrationCard}>
-            <Text style={styles.celebrationEmoji}>🎉</Text>
+          {CONFETTI_PIECES.map((piece, i) => {
+            const startFrac = piece.delay / 900;
+            const translateX = confettiProgress.interpolate({
+              inputRange: [0, startFrac, 1],
+              outputRange: [0, 0, piece.dx],
+            });
+            const translateY = confettiProgress.interpolate({
+              inputRange: [0, startFrac, 1],
+              outputRange: [0, 0, piece.dy],
+            });
+            const rotate = confettiProgress.interpolate({
+              inputRange: [0, 1],
+              outputRange: ["0deg", `${piece.rotate}deg`],
+            });
+            const opacity = confettiProgress.interpolate({
+              inputRange: [0, startFrac, Math.min(startFrac + 0.15, 0.9), 1],
+              outputRange: [0, 1, 1, 0],
+            });
+            return (
+              <Animated.View
+                key={i}
+                style={[
+                  styles.confettiPiece,
+                  {
+                    backgroundColor: piece.color,
+                    opacity,
+                    transform: [{ translateX }, { translateY }, { rotate }],
+                  },
+                ]}
+              />
+            );
+          })}
+
+          <Animated.View style={[styles.celebrationCard, { transform: [{ scale: cardScale }] }]}>
+            <Animated.Text style={[styles.celebrationEmoji, { transform: [{ scale: emojiScale }] }]}>
+              🎉
+            </Animated.Text>
             <Text style={styles.celebrationTitle}>Congratulations!</Text>
             <Text style={styles.celebrationBody}>
               You've redeemed <Text style={styles.celebrationReward}>{rewardTitle}</Text>
@@ -103,7 +186,7 @@ export function RedeemQRScreen() {
             >
               <Text style={styles.celebrationButtonLabel}>Nice!</Text>
             </Pressable>
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </View>
@@ -148,6 +231,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: spacing.lg,
+  },
+  // Rests at dead center (matching where the card itself sits) before its
+  // translate transform bursts it outward — width/height + negative
+  // margins is the simplest way to anchor an absolutely-positioned piece
+  // on its own center point rather than its top-left corner.
+  confettiPiece: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    width: 8,
+    height: 8,
+    marginTop: -4,
+    marginLeft: -4,
+    borderRadius: 2,
   },
   celebrationCard: {
     backgroundColor: colors.surface,
