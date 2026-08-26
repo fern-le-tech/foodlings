@@ -13,6 +13,8 @@ type Props = {
 
 const RED = '#D8342B';
 const WHITE = '#FFFFFF';
+const WORD = 'Foodlings';
+const LETTERS = WORD.split('');
 
 // useNativeDriver is false throughout, not just on colorProgress — `color`
 // interpolation isn't supported by the native driver, and mixing native-
@@ -85,24 +87,34 @@ export default function AnimatedSplash({ onFinish, ready }: Props) {
     };
   }, []);
 
-  const color = colorProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [RED, WHITE],
-  });
-
   return (
     <Animated.View style={[styles.container, { opacity: containerOpacity }]}>
       <Animated.Text
         style={[
           styles.logoText,
           {
-            color,
             opacity: entranceOpacity,
             transform: [{ translateY }],
           },
         ]}
       >
-        Foodlings
+        {LETTERS.map((letter, i) => {
+          // Each letter owns a slice of the shared 0-1 progress, so the
+          // word fills in white left to right as loading actually advances
+          // instead of the whole word fading as one flat block — reads
+          // more like a progress bar and more like the app's own
+          // collect-one-at-a-time personality.
+          const letterColor = colorProgress.interpolate({
+            inputRange: [i / LETTERS.length, (i + 1) / LETTERS.length],
+            outputRange: [RED, WHITE],
+            extrapolate: 'clamp',
+          });
+          return (
+            <Animated.Text key={i} style={{ color: letterColor }}>
+              {letter}
+            </Animated.Text>
+          );
+        })}
       </Animated.Text>
     </Animated.View>
   );
