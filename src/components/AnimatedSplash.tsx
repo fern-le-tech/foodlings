@@ -12,73 +12,44 @@ type Props = {
 };
 
 const RED = '#D8342B';
-const WHITE = '#FFFFFF';
-const WORD = 'Foodlings';
-const LETTERS = WORD.split('');
 
-// useNativeDriver is false throughout, not just on colorProgress — `color`
-// interpolation isn't supported by the native driver, and mixing native-
-// and JS-driven animations on the same Animated.Text (translateY/opacity
-// here, color there) throws "Attempting to run JS driven animation on
-// animated node that has been moved to 'native'". Not a perf concern for a
-// single splash text shown once per launch.
 export default function AnimatedSplash({ onFinish, ready }: Props) {
-  const translateY = useRef(new Animated.Value(24)).current;
-  const entranceOpacity = useRef(new Animated.Value(0)).current;
-  const colorProgress = useRef(new Animated.Value(0)).current;
+  const progress = useRef(new Animated.Value(0)).current;
   const containerOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     let cancelled = false;
 
-    Animated.parallel([
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: 450,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      }),
-      Animated.timing(entranceOpacity, {
-        toValue: 1,
-        duration: 450,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      }),
-    ]).start(() => {
+    // Creeps toward "almost done" while actually waiting — never promises
+    // 100% on its own, so a slow load never looks stuck at a full bar that
+    // then hangs. Real completion always finishes it the rest of the way.
+    Animated.timing(progress, {
+      toValue: 0.85,
+      duration: 1800,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: false,
+    }).start();
+
+    const floor = new Promise<void>((resolve) => setTimeout(resolve, 900));
+
+    Promise.all([ready, floor]).then(() => {
       if (cancelled) return;
-
-      // Creeps toward "almost done" while actually waiting — never
-      // promises 100% on its own, so a slow load never looks stuck at a
-      // full white logo that then hangs. Real completion always finishes
-      // it the rest of the way instead.
-      Animated.timing(colorProgress, {
-        toValue: 0.85,
-        duration: 1800,
-        easing: Easing.out(Easing.quad),
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: 250,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: false,
-      }).start();
-
-      const floor = new Promise<void>((resolve) => setTimeout(resolve, 900));
-
-      Promise.all([ready, floor]).then(() => {
+      }).start(() => {
         if (cancelled) return;
-        Animated.timing(colorProgress, {
-          toValue: 1,
-          duration: 250,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: false,
-        }).start(() => {
-          if (cancelled) return;
-          Animated.sequence([
-            Animated.delay(250),
-            Animated.timing(containerOpacity, {
-              toValue: 0,
-              duration: 350,
-              easing: Easing.in(Easing.cubic),
-              useNativeDriver: false,
-            }),
-          ]).start(() => onFinish());
-        });
+        Animated.sequence([
+          Animated.delay(250),
+          Animated.timing(containerOpacity, {
+            toValue: 0,
+            duration: 350,
+            easing: Easing.in(Easing.cubic),
+            useNativeDriver: false,
+          }),
+        ]).start(() => onFinish());
       });
     });
 
@@ -87,35 +58,18 @@ export default function AnimatedSplash({ onFinish, ready }: Props) {
     };
   }, []);
 
+  const barWidth = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
+
   return (
     <Animated.View style={[styles.container, { opacity: containerOpacity }]}>
-      <Animated.Text
-        style={[
-          styles.logoText,
-          {
-            opacity: entranceOpacity,
-            transform: [{ translateY }],
-          },
-        ]}
-      >
-        {LETTERS.map((letter, i) => {
-          // Each letter owns a slice of the shared 0-1 progress, so the
-          // word fills in white left to right as loading actually advances
-          // instead of the whole word fading as one flat block — reads
-          // more like a progress bar and more like the app's own
-          // collect-one-at-a-time personality.
-          const letterColor = colorProgress.interpolate({
-            inputRange: [i / LETTERS.length, (i + 1) / LETTERS.length],
-            outputRange: [RED, WHITE],
-            extrapolate: 'clamp',
-          });
-          return (
-            <Animated.Text key={i} style={{ color: letterColor }}>
-              {letter}
-            </Animated.Text>
-          );
-        })}
-      </Animated.Text>
+      <Text style={styles.logoText}>Foodlings</Text>
+
+      <View style={styles.barTrack}>
+        <Animated.View style={[styles.barFill, { width: barWidth }]} />
+      </View>
     </Animated.View>
   );
 }
@@ -132,5 +86,21 @@ const styles = StyleSheet.create({
     fontSize: 42,
     fontWeight: '900',
     letterSpacing: 0.5,
+    color: '#FFFFFF',
+  },
+  barTrack: {
+    position: 'absolute',
+    bottom: 64,
+    left: 48,
+    right: 48,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: '#FFFFFF',
   },
 });
