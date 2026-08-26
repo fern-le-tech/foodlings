@@ -49,7 +49,7 @@
     "extra": {
       "supabaseUrl": "https://svndowiisksyzorvqxjn.supabase.co",
       "supabaseAnonKey": "sb_publishable_cuFx8QdBNoIKM_U7855gFQ_AmGW2Ed3",
-      "staffPortalUrl": "http://10.0.0.18:5173",
+      "staffPortalUrl": "https://10.0.0.18:5173",
       "eas": {
         "projectId": "3beab9ff-7b8b-4386-ac4d-645755f399ac"
       }
