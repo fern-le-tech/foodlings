@@ -14,6 +14,12 @@ type Props = {
 const RED = '#D8342B';
 const WHITE = '#FFFFFF';
 
+// useNativeDriver is false throughout, not just on colorProgress — `color`
+// interpolation isn't supported by the native driver, and mixing native-
+// and JS-driven animations on the same Animated.Text (translateY/opacity
+// here, color there) throws "Attempting to run JS driven animation on
+// animated node that has been moved to 'native'". Not a perf concern for a
+// single splash text shown once per launch.
 export default function AnimatedSplash({ onFinish, ready }: Props) {
   const translateY = useRef(new Animated.Value(24)).current;
   const entranceOpacity = useRef(new Animated.Value(0)).current;
@@ -28,13 +34,13 @@ export default function AnimatedSplash({ onFinish, ready }: Props) {
         toValue: 0,
         duration: 450,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(entranceOpacity, {
         toValue: 1,
         duration: 450,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start(() => {
       if (cancelled) return;
@@ -67,7 +73,7 @@ export default function AnimatedSplash({ onFinish, ready }: Props) {
               toValue: 0,
               duration: 350,
               easing: Easing.in(Easing.cubic),
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]).start(() => onFinish());
         });
