@@ -67,6 +67,11 @@ export function RestaurantDirectoryScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
+  // Deliberately never calls setLoading(true) again after mount (only
+  // setLoading(false) below) — every focus/realtime refetch runs quietly
+  // against the list already on screen instead of blanking it back to a
+  // spinner. Don't add a setLoading(true) here "for symmetry" with other
+  // screens; that's exactly the bug this pattern avoids.
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     const {

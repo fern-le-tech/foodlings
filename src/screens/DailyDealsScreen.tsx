@@ -138,6 +138,12 @@ export function DailyDealsScreen() {
   const [nearbyStatus, setNearbyStatus] = useState<NearbyStatus>("idle");
 
   const listRef = useRef<FlatList<DealRow>>(null);
+  // Blocks the full-screen spinner only until the very first load resolves —
+  // without this, every tab refocus (or the realtime-driven refetch) reset
+  // `loading` to true unconditionally, blanking out deals the person had
+  // already seen seconds earlier while the (often already-fresh) refetch ran.
+  const hasLoadedDealsOnce = useRef(false);
+  const hasLoadedNearbyOnce = useRef(false);
   // Consumed once — the splash-time prefetch cache speeds up only the very
   // first loadNearby call (right after the app opens); every later refocus
   // fetches live as before so "near you" never goes permanently stale.
@@ -201,8 +207,9 @@ export function DailyDealsScreen() {
   useFocusEffect(
     useCallback(() => {
       (async () => {
-        setLoading(true);
+        if (!hasLoadedDealsOnce.current) setLoading(true);
         await loadDeals();
+        hasLoadedDealsOnce.current = true;
         setLoading(false);
         setActiveIndex(0);
       })();
@@ -213,10 +220,11 @@ export function DailyDealsScreen() {
   // should reflect where the user actually is right now, not where they
   // were last time they opened the app.
   const loadNearby = useCallback(async () => {
-    setNearbyStatus("loading");
+    if (!hasLoadedNearbyOnce.current) setNearbyStatus("loading");
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
+        hasLoadedNearbyOnce.current = true;
         setNearbyStatus("denied");
         return;
       }
@@ -294,9 +302,11 @@ export function DailyDealsScreen() {
         .sort((a, b) => a.distanceMi - b.distanceMi)
         .slice(0, 10);
 
+      hasLoadedNearbyOnce.current = true;
       setNearby(withDistance);
       setNearbyStatus("ready");
     } catch {
+      hasLoadedNearbyOnce.current = true;
       setNearbyStatus("unavailable");
     }
   }, []);

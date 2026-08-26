@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -69,17 +69,23 @@ export function ProfileScreen() {
   const [savingName, setSavingName] = useState(false);
   const [avatarPickerVisible, setAvatarPickerVisible] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  // Blocks the full-screen spinner only until the very first load resolves —
+  // without this, every tab refocus reset `loading` to true unconditionally,
+  // blanking the profile the person had already seen while the (often
+  // already-fresh) refetch ran.
+  const hasLoadedOnce = useRef(false);
 
   const load = async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
-    } else {
+    } else if (!hasLoadedOnce.current) {
       setLoading(true);
     }
     const {
       data: { user: authUser },
     } = await supabase.auth.getUser();
     if (!authUser) {
+      hasLoadedOnce.current = true;
       setLoading(false);
       setRefreshing(false);
       return;
@@ -129,6 +135,7 @@ export function ProfileScreen() {
       setFavoriteChar(null);
     }
 
+    hasLoadedOnce.current = true;
     setLoading(false);
     setRefreshing(false);
   };

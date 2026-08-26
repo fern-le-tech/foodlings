@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { supabase } from "@/lib/supabase";
@@ -29,11 +29,16 @@ export function CollectionScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  // Blocks the full-screen spinner only until the very first load resolves —
+  // without this, every tab refocus (and every realtime progress update)
+  // reset `loading` to true unconditionally, blanking out a collection the
+  // person had already seen while the (often already-fresh) refetch ran.
+  const hasLoadedOnce = useRef(false);
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
-    } else {
+    } else if (!hasLoadedOnce.current) {
       setLoading(true);
     }
     const {
@@ -62,6 +67,7 @@ export function CollectionScreen() {
       })) ?? [];
 
     setRows(merged);
+    hasLoadedOnce.current = true;
     setLoading(false);
     setRefreshing(false);
   }, []);
